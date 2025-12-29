@@ -5,12 +5,11 @@ import keyboard
 from PIL import Image
 import time
 from pathlib import Path
-import sys
-import subprocess
 
 # Setup paths
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ASSETS_DIR = BASE_DIR / "assets"
+
 
 data = {
     "soul.png": {
@@ -138,84 +137,14 @@ def nouvelle_partie():
     time.sleep(3)
 
 
-def is_balatro_focused():
-    """Check if the Balatro window is currently the active/foreground window."""
-    try:
-        if sys.platform == "win32":
-            import ctypes
-
-            user32 = ctypes.windll.user32
-            handle = user32.GetForegroundWindow()
-            length = user32.GetWindowTextLengthW(handle)
-            buff = ctypes.create_unicode_buffer(length + 1)
-            user32.GetWindowTextW(handle, buff, length + 1)
-            return "Balatro" in buff.value
-        elif sys.platform.startswith("linux"):
-            # Try xdotool first (common for automation)
-            try:
-                result = subprocess.check_output(
-                    ["xdotool", "getwindowfocus", "getwindowname"],
-                    stderr=subprocess.DEVNULL,
-                )
-                return b"Balatro" in result
-            except (FileNotFoundError, subprocess.CalledProcessError):
-                pass
-
-            # Fallback to xprop
-            try:
-                result = subprocess.check_output(
-                    ["xprop", "-root", "_NET_ACTIVE_WINDOW"], stderr=subprocess.DEVNULL
-                )
-                id_match = result.split()[-1]
-                result = subprocess.check_output(
-                    ["xprop", "-id", id_match, "WM_NAME"], stderr=subprocess.DEVNULL
-                )
-                return b"Balatro" in result
-            except (FileNotFoundError, subprocess.CalledProcessError):
-                # If we verify we are on Linux but have no tools, we might warn once or fail open.
-                # For safety, failing secure (False) is better, but might be annoying if tools are missing.
-                # Let's assume True to avoid breaking if tools missing, but print warning?
-                # Better: return True but log warning. For now, simple return True to not block user.
-                return True
-    except Exception:
-        # Fallback if anything goes wrong with system calls
-        return True
-    return False
-
-
-def check_interruption():
-    """Check for exit/pause keys and raise exception or break."""
-    if keyboard.is_pressed("l"):
-        print("Exiting...")
-        sys.exit(0)
-    if keyboard.is_pressed("m"):
-        return True  # Signal to break current loop
-    return False
-
-
 def balatro():
     print("Balatro Automation Ready.")
     print("Press 'P' to start/resume.")
     print("Press 'M' to pause loop.")
     print("Press 'L' to exit completely.")
-
     while True:
         try:
-            check_interruption()
-
             if keyboard.is_pressed("p"):
-                print("Starting automation loop...")
-                while True:
-                    if check_interruption():
-                        print("Paused.")
-                        break
-
-                    if not is_balatro_focused():
-                        time.sleep(1)
-                        continue
-
-                    # Main logic
-
                 while True:
                     if reconnaissance_image("arcana1.png") and not (
                         reconnaissance_image("juggle.png")
