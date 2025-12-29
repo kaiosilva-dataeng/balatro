@@ -1,4 +1,4 @@
-import random
+
 import pyautogui
 import pydirectinput
 import keyboard
@@ -16,36 +16,30 @@ data = {
         "pos": [(620, 666), (795, 666), (970, 666), (1145, 666), (1320, 666)],
         "width": 148,
         "height": 220,
-        "nb_essais": 1000,
-        "confiance": 0.5,
+
+        "confiance": 0.8,
     },
     "arcana1.png": {
         "pos": [(570, 813)],
         "width": 64,
         "height": 64,
-        "nb_essais": 3000,
-        "confiance": 0.55,
+
+        "confiance": 0.9,
     },
-    "juggle.png": {
-        "pos": [(570, 813)],
-        "width": 64,
-        "height": 64,
-        "nb_essais": 3000,
-        "confiance": 0.55,
-    },
+
     "arcana2.png": {
         "pos": [(922, 873)],
         "width": 64,
         "height": 64,
-        "nb_essais": 1000,
+
         "confiance": 0.8,
     },
-    "foil.png": {
-        "pos": [(922, 873)],
+
+    "spectral.png": {
+        "pos": [(570, 813), (922, 873)],
         "width": 64,
         "height": 64,
-        "nb_essais": 1000,
-        "confiance": 0.8,
+        "confiance": 0.9,
     },
 }
 
@@ -54,33 +48,23 @@ def reconnaissance_image(img_ref, ind=0):
     (x, y) = data[img_ref]["pos"][ind]
     width = data[img_ref]["width"]
     height = data[img_ref]["height"]
-    nb_essais = data[img_ref]["nb_essais"]
     confiance = data[img_ref]["confiance"]
 
-    # Capture screenshot in memory, no need to save to file
-    im = pyautogui.screenshot(region=(x, y, width, height))
-    pixels1 = list(im.getdata())
-
-    # Open reference image from assets directory
-    soul = Image.open(ASSETS_DIR / img_ref)
-    pixels2 = list(soul.getdata())
-
-    nb = 0
-    for k in range(nb_essais):
-        i = random.choice(pixels1)
-        for j in pixels2:
-            if (
-                j[0] - 3 < i[0] < j[0] + 3
-                and j[1] - 3 < i[1] < j[1] + 3
-                and j[2] - 3 < i[2] < j[2] + 3
-            ):
-                nb += 1
-                break
-
-    return (nb / nb_essais) > confiance
+    img_path = str(ASSETS_DIR / img_ref)
+    
+    try:
+        location = pyautogui.locateOnScreen(
+            img_path, 
+            region=(x, y, width, height), 
+            confidence=confiance
+        )
+        return location is not None
+    except Exception:
+        return False
 
 
 def arcana():
+    time.sleep(5)
     for i in range(5):
         if reconnaissance_image("soul.png", i):
             centre = (
@@ -89,29 +73,27 @@ def arcana():
             )
             pydirectinput.moveTo(centre[0], centre[1])
             pydirectinput.click()
-            time.sleep(0.5)
+            time.sleep(1.5)
             pydirectinput.moveTo(
                 centre[0], centre[1] + (data["soul.png"]["height"] // 2) - 10
             )
             pydirectinput.click()
-            time.sleep(5)
+            time.sleep(0.5)
             break
 
 
 def arcana1():
     pydirectinput.moveTo(715, 850)
     pydirectinput.click()
-    time.sleep(5)
     arcana()
 
 
 def arcana2():
     pydirectinput.moveTo(715, 850)
     pydirectinput.click()
-    time.sleep(3)
+    time.sleep(0.5)
     pydirectinput.moveTo(1070, 850)
     pydirectinput.click()
-    time.sleep(5)
     arcana()
 
 
@@ -119,10 +101,9 @@ def arcana12():
     arcana1()
     pydirectinput.moveTo(1335, 975)
     pydirectinput.click()
-    time.sleep(3)
+    time.sleep(0.5)
     pydirectinput.moveTo(1070, 850)
     pydirectinput.click()
-    time.sleep(5)
     arcana()
 
 
@@ -134,7 +115,7 @@ def nouvelle_partie():
     time.sleep(0.5)
     pydirectinput.moveTo(955, 830)
     pydirectinput.click()
-    time.sleep(3)
+    time.sleep(0.5)
 
 
 def balatro():
@@ -146,19 +127,21 @@ def balatro():
         try:
             if keyboard.is_pressed("p"):
                 while True:
-                    if reconnaissance_image("arcana1.png") and not (
-                        reconnaissance_image("juggle.png")
-                    ):
-                        if reconnaissance_image("arcana2.png") and not (
-                            reconnaissance_image("foil.png")
-                        ):
-                            arcana12()
-                        else:
-                            arcana1()
-                    elif reconnaissance_image("arcana2.png") and not (
-                        reconnaissance_image("foil.png")
-                    ):
+                    has_arcana1 = reconnaissance_image("arcana1.png")
+                    has_arcana2 = reconnaissance_image("arcana2.png")
+                    has_spectral1 = reconnaissance_image("spectral.png", 0)
+                    has_spectral2 = reconnaissance_image("spectral.png", 1)
+                    
+                    buy_slot1 = has_arcana1 or has_spectral1
+                    buy_slot2 = has_arcana2 or has_spectral2
+                    
+                    if buy_slot1 and buy_slot2:
+                        arcana12()
+                    elif buy_slot1:
+                        arcana1()
+                    elif buy_slot2:
                         arcana2()
+                        
                     nouvelle_partie()
                     if keyboard.is_pressed("m"):
                         break
