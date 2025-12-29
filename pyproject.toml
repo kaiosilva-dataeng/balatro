@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-soul_farm = "src.balatro.soul_farm:soul_farm"
+soul_farm = "balatro.main:main"
 
 [build-system]
 requires = ["uv_build>=0.9.18,<0.10.0"]

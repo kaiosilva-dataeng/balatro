@@ -1,11 +1,11 @@
 import re
 from datetime import datetime
+from pathlib import Path
 
 def process_balatro_logs(log_text):
     # Data structures
     total_doubles = 0
     total_charms = 0
-    total_spectrals = 0
     total_souls = 0
     
     # Timestamps to calculate running time
@@ -15,7 +15,6 @@ def process_balatro_logs(log_text):
     time_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})"
     double_pattern = r"Found double.png"
     charm_pattern = r"Found charm.png"
-    spectral_pattern = r"Found spectral.png" # Added for completeness
     soul_pattern = r"Found the_soul.png"
 
     lines = log_text.strip().split('\n')
@@ -29,7 +28,6 @@ def process_balatro_logs(log_text):
         # Count occurrences (handles multiple finds in one line)
         total_doubles += len(re.findall(double_pattern, line))
         total_charms += len(re.findall(charm_pattern, line))
-        total_spectrals += len(re.findall(spectral_pattern, line))
         total_souls += len(re.findall(soul_pattern, line))
 
     # Calculate Running Time (Total span across all sessions in log)
@@ -47,11 +45,24 @@ def process_balatro_logs(log_text):
     print("-" * 35)
     print(f"Total Double Tags:     {total_doubles}")
     print(f"Total Charm Tags:      {total_charms}")
-    print(f"Total Spectral Tags:   {total_spectrals}")
-    print(f"Total Souls Opened:    {total_souls}")
     print("-" * 35)
     
     # Summary of tags found
     print(f"Detailed Quantitatives:")
-    print(f"* Charms: {total_charms}")
-    print(f"* Spectrals: {total_spectrals}")
+    print(f"* Charms: {total_charms*total_doubles}")
+    print(f"Total Souls Opened:    {total_souls}")
+    print(f"* Charms per Soul: {(total_charms*total_doubles)/total_souls}")
+    print(f"Souls per hour: {total_souls/(duration.seconds/3600)}")
+    print("-" * 35)
+
+if __name__ == "__main__":
+    LOGS_DIR = Path(__file__).resolve().parents[2] / "logs"
+    
+    files = list(LOGS_DIR.glob("*.log"))
+    
+    if files:
+        latest_log_file = max(files, key=lambda p: p.stat().st_mtime)
+        print(f"Processing latest log: {latest_log_file.name}")
+        process_balatro_logs(latest_log_file.read_text(encoding='utf-8'))
+    else:
+        print("No log files found.")

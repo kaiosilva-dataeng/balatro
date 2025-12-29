@@ -142,7 +142,7 @@ def new_game():
     time.sleep(0.5)
 
 
-def soul_farm():
+def soul_farm() -> Path:
     print("Balatro Soul Farm Automation Ready.")
     print("Press 'P' to start/resume.")
     print("Press 'M' to pause loop.")
