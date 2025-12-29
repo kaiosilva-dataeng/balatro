@@ -40,9 +40,11 @@ def process_balatro_logs(log_text: str) -> None:
         total_souls += len(re.findall(soul_pattern, line))
 
     # Calculate Running Time (Total span across all sessions in log)
+    duration_seconds = 0
     if timestamps:
         duration = max(timestamps) - min(timestamps)
-        hours, remainder = divmod(duration.seconds, 3600)
+        duration_seconds = duration.total_seconds()
+        hours, remainder = divmod(int(duration_seconds), 3600)
         minutes, seconds = divmod(remainder, 60)
         run_time_str = f"{hours}h {minutes}m {seconds}s"
     else:
@@ -60,8 +62,19 @@ def process_balatro_logs(log_text: str) -> None:
     print(f"Detailed Quantitatives:")
     print(f"* Charms: {total_charms*total_doubles}")
     print(f"Total Souls Opened:    {total_souls}")
-    print(f"* Charms per Soul: {(total_charms*total_doubles)/total_souls}")
-    print(f"Souls per hour: {total_souls/(duration.seconds/3600)}")
+    
+    if total_souls > 0:
+        charms_per_soul = (total_charms * total_doubles) / total_souls
+        print(f"* Charms per Soul: {charms_per_soul:.2f}")
+    else:
+        print(f"* Charms per Soul: 0")
+
+    if duration_seconds > 0:
+        souls_per_hour = total_souls / (duration_seconds / 3600)
+        print(f"Souls per hour: {souls_per_hour:.2f}")
+    else:
+        print(f"Souls per hour: 0")
+    
     print("-" * 35)
 
 if __name__ == "__main__":
