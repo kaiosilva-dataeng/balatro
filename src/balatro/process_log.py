@@ -16,6 +16,7 @@ def process_balatro_logs(log_text: str) -> None:
     total_doubles = 0
     total_charms = 0
     total_souls = 0
+    new_game_count = 0
     
     # Timestamps to calculate running time
     timestamps = []
@@ -25,6 +26,7 @@ def process_balatro_logs(log_text: str) -> None:
     double_pattern = r"Found double.png"
     charm_pattern = r"Found charm.png"
     soul_pattern = r"Found the_soul.png"
+    new_game_pattern = r"New game started. Cursor reset to (5, 5)."
 
     lines = log_text.strip().split('\n')
     
@@ -38,6 +40,7 @@ def process_balatro_logs(log_text: str) -> None:
         total_doubles += len(re.findall(double_pattern, line))
         total_charms += len(re.findall(charm_pattern, line))
         total_souls += len(re.findall(soul_pattern, line))
+        new_game_count += len(re.findall(new_game_pattern, line))
 
     # Calculate Running Time (Total span across all sessions in log)
     duration_seconds = 0
@@ -60,11 +63,12 @@ def process_balatro_logs(log_text: str) -> None:
     
     # Summary of tags found
     print(f"Detailed Quantitatives:")
-    print(f"* Charms: {total_charms*total_doubles}")
+    print(f"* New Game Count: {new_game_count}")
+    print(f"* Charms: {total_charms+total_doubles}")
     print(f"Total Souls Opened:    {total_souls}")
     
     if total_souls > 0:
-        charms_per_soul = (total_charms * total_doubles) / total_souls
+        charms_per_soul = (total_charms + total_doubles) / total_souls
         print(f"* Charms per Soul: {charms_per_soul:.2f}")
     else:
         print(f"* Charms per Soul: 0")
