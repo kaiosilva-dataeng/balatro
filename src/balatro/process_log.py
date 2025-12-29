@@ -65,8 +65,12 @@ def process_balatro_logs(log_text: str) -> None:
     print("-" * 35)
 
 if __name__ == "__main__":
-    LOGS_DIR = Path(__file__).resolve().parents[2] / "logs"
+    LOGS_DIR = Path.home() / ".balatro" / "logs"
     
+    if not LOGS_DIR.exists():
+        print(f"No log directory found at {LOGS_DIR}")
+        exit()
+
     files = list(LOGS_DIR.glob("*.log"))
     
     if files:
