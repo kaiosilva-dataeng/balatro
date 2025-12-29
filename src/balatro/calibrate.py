@@ -9,7 +9,7 @@ CONFIG_FILE = Path(__file__).parent / "config.json"
 ACTIONS = {
     "skip_slot_1": "HOVER over 'Skip Slot 1' (Small Blind)",
     "skip_slot_2": "HOVER over 'Skip Slot 2' (Big Blind)",
-    "buy_specialized_skip": "HOVER over 'Pack Skip/Next' button",
+    "package_specialized_skip": "HOVER over 'Pack Skip/Next' button",
     "new_game_top": "HOVER over 'New Game' (Menu Top)",
     "new_game_confirm": "HOVER over 'New Game' (Confirm/Deck Select)",
 }
@@ -23,7 +23,7 @@ def calibrate():
     print("  3. Press 'Q' to quit at any time.\n")
 
     config = {}
-
+    config["window"] = pyautogui.size()
     for key, prompt in ACTIONS.items():
         print(f"\n👉 {prompt}")
         print("   [Waiting for 'C' key...]")

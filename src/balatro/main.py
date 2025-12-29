@@ -14,7 +14,7 @@ def main() -> None:
     """
     # Auto-calibrate if not 1080p and no config exists
     width, height = pyautogui.size()
-    if (width, height) != (1920, 1080) and not CONFIG_FILE.exists():
+    if (width, height) != (1920, 1080) and (not CONFIG_FILE.exists() or CONFIG_FILE["window"] != (width, height)):
         print(f"Detected non-standard resolution: {width}x{height}")
         print("Starting first-run calibration...")
         try:

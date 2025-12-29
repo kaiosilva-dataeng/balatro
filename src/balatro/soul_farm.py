@@ -27,12 +27,11 @@ logging.info(f"Resolution: {pyautogui.size()}")
 import json
 CONFIG_FILE = BASE_DIR / "config.json"
 
-# Default coordinates (1080p reference) - fallback if config missing
-# Default coordinates (1080p reference) - fallback if config missing
 CONFIG = {
+    "window": (1920, 1080),
     "skip_slot_1": (715, 850),
     "skip_slot_2": (1070, 850),
-    "buy_specialized_skip": (1335, 975),
+    "package_specialized_skip": (1335, 975),
     "new_game_top": (955, 355),
     "new_game_confirm": (955, 830)
 }
@@ -74,34 +73,24 @@ data = {
 }
 
 
-def scan_for_image(img_ref: str) -> List[Dict[str, Any]]:
+def scan_screen(asset_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:
     """
-    Scans the entire screen for the given image reference.
-    """
-    if (needle := data[img_ref].get("needle")) is None:
-        img_path = str(ASSETS_DIR / img_ref)
-        needle = cv2.imread(img_path)
+    Scans the screen once for multiple assets.
     
-    if needle is None:
-        logging.error(f"Could not load image: {img_ref}")
-        return []
-
+    Args:
+        asset_names (List[str]): List of image filenames to search for.
+        
+    Returns:
+        Dict[str, List[Dict]]: Dictionary mapping asset name to list of found matches.
+    """
+    results = {name: [] for name in asset_names}
+    
     try:
         time.sleep(0.1)
         screenshot = pyautogui.screenshot()
         haystack = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
-
-        result = cv2.matchTemplate(haystack, needle, cv2.TM_CCOEFF_NORMED)
-        threshold = data[img_ref].get("confiance", 0.6)
-        loc = np.where(result >= threshold)
-        matches = list(zip(*loc[::-1]))
-        matches.sort(key=lambda pt: result[pt[1], pt[0]], reverse=True)
         
-        found_objects = []
-        processed_points = []
-        
-        # Calculate split point dynamically from config
-        # Default 750 (1080p). If calibrated, use midpoint between slot 1 and 2.
+        # Calculate split point dynamically from config once per scan
         s1 = get_action_pos("skip_slot_1")
         s2 = get_action_pos("skip_slot_2")
         if s1 and s2 and s1[0] > 0 and s2[0] > 0:
@@ -109,27 +98,47 @@ def scan_for_image(img_ref: str) -> List[Dict[str, Any]]:
         else:
             split_x = 750
 
-        for pt in matches:
-            if any(abs(pt[0] - pp[0]) < 10 and abs(pt[1] - pp[1]) < 10 for pp in processed_points):
+        for img_ref in asset_names:
+            if (needle := data[img_ref].get("needle")) is None:
+                img_path = str(ASSETS_DIR / img_ref)
+                needle = cv2.imread(img_path)
+            
+            if needle is None:
+                logging.error(f"Could not load image: {img_ref}")
                 continue
-                
-            processed_points.append(pt)
-            confidence = result[pt[1], pt[0]]
-            
-            h, w = needle.shape[:2]
-            center_x = pt[0] + w//2
-            center_y = pt[1] + h//2
-            
-            slot = 1 if pt[0] < split_x else 2
-            
-            logging.info(f"Found {img_ref} | Slot {slot} | Conf: {confidence:.2f}")
-            found_objects.append({'pos': (center_x, center_y), 'conf': float(confidence), 'slot': slot})
-            
-        return found_objects
 
+            res = cv2.matchTemplate(haystack, needle, cv2.TM_CCOEFF_NORMED)
+            threshold = data[img_ref].get("confiance", 0.6)
+            loc = np.where(res >= threshold)
+            matches = list(zip(*loc[::-1]))
+            matches.sort(key=lambda pt: res[pt[1], pt[0]], reverse=True)
+            
+            processed_points = []
+            
+            for pt in matches:
+                if any(abs(pt[0] - pp[0]) < 10 and abs(pt[1] - pp[1]) < 10 for pp in processed_points):
+                    continue
+                    
+                processed_points.append(pt)
+                confidence = res[pt[1], pt[0]]
+                
+                h, w = needle.shape[:2]
+                center_x = pt[0] + w//2
+                center_y = pt[1] + h//2
+                
+                slot = 1 if pt[0] < split_x else 2
+                
+                logging.info(f"Found {img_ref} | Slot {slot} | Conf: {confidence:.2f}")
+                results[img_ref].append({'pos': (center_x, center_y), 'conf': float(confidence), 'slot': slot})
+                
     except Exception as e:
-        logging.error(f"Error scanning for {img_ref}: {e}")
-        return []
+        logging.error(f"Error in scan_screen: {e}")
+        
+    return results
+
+def scan_for_image(img_ref: str) -> List[Dict[str, Any]]:
+    """Legacy wrapper for single image scan."""
+    return scan_screen([img_ref]).get(img_ref, [])
 
 
 def buy_the_soul() -> None:
@@ -137,6 +146,7 @@ def buy_the_soul() -> None:
     Attempts to find and click the 'The Soul' card on the screen.
     """
     time.sleep(5)
+    # Still uses single scan as it is a specific action step
     soul_matches = scan_for_image("the_soul.png")
     
     if soul_matches:
@@ -161,16 +171,19 @@ def click_skip_slot_1_button():
     """Clicks the button to skip the first slot (Small Blind)."""
     pydirectinput.moveTo(*get_action_pos("skip_slot_1"))
     pydirectinput.click()
+    logging.info("ACTION: Skipped Slot 1")
 
 def click_skip_slot_2_button():
     """Clicks the button to skip the second slot (Big Blind)."""
     pydirectinput.moveTo(*get_action_pos("skip_slot_2"))
     pydirectinput.click()
+    logging.info("ACTION: Skipped Slot 2")
 
 def click_buy_specialized_skip_button():
     """Clicks the specialized skip/next button."""
-    pydirectinput.moveTo(*get_action_pos("buy_specialized_skip"))
+    pydirectinput.moveTo(*get_action_pos("package_specialized_skip"))
     pydirectinput.click()
+    logging.info("ACTION: Bought Specialized Skip/Next")
 
 def click_new_game_top():
     """Clicks the top New Game button in menu."""
@@ -228,8 +241,7 @@ def new_game() -> None:
     time.sleep(0.5)
     pydirectinput.moveTo(5, 5)
     time.sleep(3)
-    logging.info("New game started. Cursor reset to (5, 5).")
-
+    logging.info("ACTION: New Game Started")
 
 def soul_farm() -> Path:
     """
@@ -276,33 +288,44 @@ def soul_farm() -> Path:
     while state.running:
         try:
             if state.farming:
-                # Scan for assets
-
-
-                double_matches = scan_for_image("double.png")
-                charm_matches = scan_for_image("charm.png")
+                # Optimized Single-Pass Scan
+                scan_results = scan_screen(["double.png", "charm.png"])
+                double_matches = scan_results["double.png"]
+                charm_matches = scan_results["charm.png"]
                 
                 found_slot1 = False
                 found_slot2 = False
-                charm_found_slot1 = False
+                double_found_slot1 = False
                 
                 # Check Double matches
                 for m in double_matches:
-                    if m['slot'] == 1: charm_found_slot1 = True
+                    if m['slot'] == 1: double_found_slot1 = True
 
-                # Check buy_the_soul matches
+                # Check charm matches (logic seems to treat charm same as soul trigger?)
                 for m in charm_matches:
                     if m['slot'] == 1: found_slot1 = True
                     if m['slot'] == 2: found_slot2 = True
-                    
-                if (charm_found_slot1 or found_slot1) and found_slot2:
-                    logging.info("Skip tag on both slots")
+                
+                # Succinct Scan Log
+                detection_summary = []
+                if double_found_slot1: detection_summary.append("Double(Slot1)")
+                if found_slot1: detection_summary.append("Charm(Slot1)")
+                if found_slot2: detection_summary.append("Charm(Slot2)")
+                
+                if detection_summary:
+                    logging.info(f"SCAN_RESULT: detected {', '.join(detection_summary)}")
+                
+                if double_found_slot1 and found_slot2:
+                    logging.info("DECISION: Skip for double and charm")
+                    skip_slot_1_buy_skip_slot_2()
+                elif found_slot1 and found_slot2:
+                    logging.info("DECISION: Skip for charm and charm")
                     skip_slot_1_buy_skip_slot_2()
                 elif found_slot1:
-                    logging.info("Skip tag on slot 1")
+                    logging.info("DECISION: Skip for charm (slot 1)")
                     skip_slot_1()
                 elif found_slot2:
-                    logging.info("Skip tag on slot 2")
+                    logging.info("DECISION: Skip for charm (slot 2)")
                     skip_slot_2()
                     
                 new_game()
