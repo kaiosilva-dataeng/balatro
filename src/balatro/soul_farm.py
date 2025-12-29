@@ -42,7 +42,9 @@ CONFIG = {
     "skip_slot_2": (1070, 850),
     "package_specialized_skip": (1335, 975),
     "new_game_top": (955, 355),
-    "new_game_confirm": (955, 830)
+    "new_game_confirm": (955, 830),
+    "roi_skip_slots": (556, 787, 627, 184),
+    "roi_the_soul": (609, 653, 862, 241),
 }
 
 def load_config():
@@ -82,12 +84,13 @@ data = {
 }
 
 
-def scan_screen(asset_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+def scan_screen(asset_names: List[str], region: Optional[tuple[int, int, int, int]] = None) -> Dict[str, List[Dict[str, Any]]]:
     """
-    Scans the screen once for multiple assets.
+    Scans the screen (or a specific region) for multiple assets.
     
     Args:
         asset_names (List[str]): List of image filenames to search for.
+        region (Optional[tuple]): (left, top, width, height) region to scan. None for full screen.
         
     Returns:
         Dict[str, List[Dict]]: Dictionary mapping asset name to list of found matches.
@@ -95,11 +98,16 @@ def scan_screen(asset_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:
     results = {name: [] for name in asset_names}
     
     try:
-        time.sleep(0.1)
-        screenshot = pyautogui.screenshot()
+        # time.sleep(0.1) # Removed small sleep to be snappier, can add back if needed
+        screenshot = pyautogui.screenshot(region=region)
         haystack = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
         
+        # Region offset to convert local coordinates to screen coordinates
+        off_x, off_y = (region[0], region[1]) if region else (0, 0)
+        
         # Calculate split point dynamically from config once per scan
+        # Note: If we are scanning a region (like skip slots), we might need to adjust logic
+        # But split logic relies on global coordinates usually.
         s1 = get_action_pos("skip_slot_1")
         s2 = get_action_pos("skip_slot_2")
         if s1 and s2 and s1[0] > 0 and s2[0] > 0:
@@ -126,6 +134,7 @@ def scan_screen(asset_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:
             processed_points = []
             
             for pt in matches:
+                # pt is (x, y) in haystack coordinates
                 if any(abs(pt[0] - pp[0]) < 10 and abs(pt[1] - pp[1]) < 10 for pp in processed_points):
                     continue
                     
@@ -133,22 +142,24 @@ def scan_screen(asset_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:
                 confidence = res[pt[1], pt[0]]
                 
                 h, w = needle.shape[:2]
-                center_x = pt[0] + w//2
-                center_y = pt[1] + h//2
+                # Center in haystack
+                local_center_x = pt[0] + w//2
+                local_center_y = pt[1] + h//2
                 
-                slot = 1 if pt[0] < split_x else 2
+                # Global screen coordinates
+                screen_center_x = local_center_x + off_x
+                screen_center_y = local_center_y + off_y
+                
+                # Determine slot based on global x
+                slot = 1 if screen_center_x < split_x else 2
                 
                 logging.info(f"Found {img_ref} | Slot {slot} | Conf: {confidence:.2f}")
-                results[img_ref].append({'pos': (center_x, center_y), 'conf': float(confidence), 'slot': slot})
+                results[img_ref].append({'pos': (screen_center_x, screen_center_y), 'conf': float(confidence), 'slot': slot})
                 
     except Exception as e:
         logging.error(f"Error in scan_screen: {e}")
         
     return results
-
-def scan_for_image(img_ref: str) -> List[Dict[str, Any]]:
-    """Legacy wrapper for single image scan."""
-    return scan_screen([img_ref]).get(img_ref, [])
 
 
 def buy_the_soul() -> None:
@@ -156,8 +167,10 @@ def buy_the_soul() -> None:
     Attempts to find and click the 'The Soul' card on the screen.
     """
     time.sleep(5)
-    # Still uses single scan as it is a specific action step
-    soul_matches = scan_for_image("the_soul.png")
+    # Uses ROI for The Soul
+    roi = CONFIG.get("roi_the_soul")
+    scan_results = scan_screen(["the_soul.png"], region=roi)
+    soul_matches = scan_results.get("the_soul.png", [])
     
     if soul_matches:
         best = soul_matches[0]
@@ -298,8 +311,9 @@ def soul_farm() -> Path:
     while state.running:
         try:
             if state.farming:
-                # Optimized Single-Pass Scan
-                scan_results = scan_screen(["double.png", "charm.png"])
+                # Optimized Single-Pass Scan with ROI
+                roi_slots = CONFIG.get("roi_skip_slots")
+                scan_results = scan_screen(["double.png", "charm.png"], region=roi_slots)
                 double_matches = scan_results["double.png"]
                 charm_matches = scan_results["charm.png"]
                 

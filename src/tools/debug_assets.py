@@ -4,15 +4,19 @@ import pyautogui
 import time
 import keyboard
 from pathlib import Path
-from soul_farm import data, ASSETS_DIR
+from balatro.soul_farm import data, ASSETS_DIR, CONFIG
 
-def run_full_screen_scan():
-    print(f"\n[{time.strftime('%H:%M:%S')}] 🔍 SCANNING FULL SCREEN FOR ASSETS (OpenCV)...")
-    print("This might take a few seconds per asset.")
+def run_scan(region=None, label="FULL SCREEN"):
+    print(f"\n[{time.strftime('%H:%M:%S')}] 🔍 SCANNING {label} FOR ASSETS (OpenCV)...")
+    if region:
+        print(f"Region: {region}")
     
     # Capture screen once
-    screenshot = pyautogui.screenshot()
+    screenshot = pyautogui.screenshot(region=region)
     haystack = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+
+    # Offset to convert back to global screen coordinates
+    off_x, off_y = (region[0], region[1]) if region else (0, 0)
 
     for name, _ in data.items():
         img_path = str(ASSETS_DIR / name)
@@ -58,11 +62,15 @@ def run_full_screen_scan():
                 
                 # Get dimensions
                 h, w = needle.shape[:2]
-                center_x = pt[0] + w//2
-                center_y = pt[1] + h//2
+                local_center_x = pt[0] + w//2
+                local_center_y = pt[1] + h//2
+                
+                # Global coordinates
+                global_x = local_center_x + off_x
+                global_y = local_center_y + off_y
                 
                 icon = "✅" if confidence >= 0.9 else "⚠️" if confidence >= 0.8 else "❓"
-                print(f"     {icon} Conf: {confidence:.4f} | Pos: ({pt[0]}, {pt[1]}) | Center: ({center_x}, {center_y})")
+                print(f"     {icon} Conf: {confidence:.4f} | Local: ({pt[0]}, {pt[1]}) | Global Center: ({global_x}, {global_y})")
                 
                 if found_count >= 10: # Limit output
                     print("     ... (limiting to top 10 matches)")
@@ -77,12 +85,22 @@ def run_full_screen_scan():
 
 def test_assets():
     print("=== INTERACTIVE ASSET DEBUGGER ===")
-    print("Press 'F' to SCAN FULL SCREEN (Find correct coordinates).")
+    print("Press 'F' to SCAN FULL SCREEN.")
+    print("Press 'S' to SCAN SKIP SLOTS ROI.")
+    print("Press 'T' to SCAN THE SOUL ROI.")
     print("Press 'Q' to quit.")
     
     while True:
         if keyboard.is_pressed('f'):
-            run_full_screen_scan()
+            run_scan(region=None, label="FULL SCREEN")
+            time.sleep(0.5)
+        elif keyboard.is_pressed('s'):
+            r = CONFIG.get("roi_skip_slots")
+            run_scan(region=r, label="SKIP SLOTS ROI")
+            time.sleep(0.5)
+        elif keyboard.is_pressed('t'):
+            r = CONFIG.get("roi_the_soul")
+            run_scan(region=r, label="THE SOUL ROI")
             time.sleep(0.5)
         elif keyboard.is_pressed('q'):
             print("Exiting...")
