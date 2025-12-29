@@ -4,7 +4,7 @@ import pyautogui
 import time
 import keyboard
 from pathlib import Path
-from main import data, ASSETS_DIR
+from soul_farm import data, ASSETS_DIR
 
 def run_full_screen_scan():
     print(f"\n[{time.strftime('%H:%M:%S')}] 🔍 SCANNING FULL SCREEN FOR ASSETS (OpenCV)...")
@@ -17,6 +17,7 @@ def run_full_screen_scan():
     for name, _ in data.items():
         img_path = str(ASSETS_DIR / name)
         needle = cv2.imread(img_path)
+        
         
         if needle is None:
              print(f"  ⚠️ Error: Could not load {name}")
