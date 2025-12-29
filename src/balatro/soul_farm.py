@@ -22,6 +22,41 @@ LOG_FILE = LOG_DIR   / f"{time.strftime('%Y-%m-%d_%H-%M-%S')}.log"
 
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logging.info("Balatro Automation Ready.")
+logging.info(f"Resolution: {pyautogui.size()}")
+# --- Configuration Loading ---
+import json
+CONFIG_FILE = BASE_DIR / "config.json"
+
+# Default coordinates (1080p reference) - fallback if config missing
+# Default coordinates (1080p reference) - fallback if config missing
+CONFIG = {
+    "skip_slot_1": (715, 850),
+    "skip_slot_2": (1070, 850),
+    "buy_specialized_skip": (1335, 975),
+    "new_game_top": (955, 355),
+    "new_game_confirm": (955, 830)
+}
+
+def load_config():
+    """Loads configuration from file if it exists."""
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                user_config = json.load(f)
+                CONFIG.update(user_config)
+                logging.info(f"Loaded configuration from {CONFIG_FILE}")
+        except Exception as e:
+            logging.error(f"Failed to load config.json: {e}")
+    else:
+        logging.warning(f"Config file not found at {CONFIG_FILE}. Using default 1080p coordinates.")
+
+load_config()
+
+def get_action_pos(action_name: str) -> tuple[int, int]:
+    """Retrieves the (x, y) coordinates for a named action from the config."""
+    return tuple(CONFIG.get(action_name, (0, 0)))
+
+# -------------------------
 
 data = {
     "the_soul.png": {
@@ -29,11 +64,11 @@ data = {
         "needle": cv2.imread(str(ASSETS_DIR / "the_soul.png"))
     },
     "double.png": {
-        "confiance": 0.9,
+        "confiance": 0.85,
         "needle": cv2.imread(str(ASSETS_DIR / "double.png"))
     },
     "charm.png": {
-        "confiance": 0.9,
+        "confiance": 0.85,
         "needle": cv2.imread(str(ASSETS_DIR / "charm.png"))
     }
 }
@@ -42,42 +77,38 @@ data = {
 def scan_for_image(img_ref: str) -> List[Dict[str, Any]]:
     """
     Scans the entire screen for the given image reference.
-
-    Args:
-        img_ref (str): The filename of the image to search for (key in the data dictionary).
-
-    Returns:
-        List[Dict[str, Any]]: A list of found matches, where each match is a dictionary containing:
-            - 'pos' (Tuple[int, int]): The (x, y) coordinates of the center of the match.
-            - 'conf' (float): The confidence score of the match.
-            - 'slot' (int): The slot number (1 or 2) based on the x-coordinate.
     """
     if (needle := data[img_ref].get("needle")) is None:
         img_path = str(ASSETS_DIR / img_ref)
         needle = cv2.imread(img_path)
-
+    
     if needle is None:
         logging.error(f"Could not load image: {img_ref}")
         return []
 
     try:
-
-        pydirectinput.moveTo(5, 5)
+        time.sleep(0.1)
         screenshot = pyautogui.screenshot()
         haystack = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
 
         result = cv2.matchTemplate(haystack, needle, cv2.TM_CCOEFF_NORMED)
-        
         threshold = data[img_ref].get("confiance", 0.6)
-        
         loc = np.where(result >= threshold)
         matches = list(zip(*loc[::-1]))
-        
         matches.sort(key=lambda pt: result[pt[1], pt[0]], reverse=True)
         
         found_objects = []
         processed_points = []
         
+        # Calculate split point dynamically from config
+        # Default 750 (1080p). If calibrated, use midpoint between slot 1 and 2.
+        s1 = get_action_pos("skip_slot_1")
+        s2 = get_action_pos("skip_slot_2")
+        if s1 and s2 and s1[0] > 0 and s2[0] > 0:
+            split_x = (s1[0] + s2[0]) // 2
+        else:
+            split_x = 750
+
         for pt in matches:
             if any(abs(pt[0] - pp[0]) < 10 and abs(pt[1] - pp[1]) < 10 for pp in processed_points):
                 continue
@@ -89,7 +120,7 @@ def scan_for_image(img_ref: str) -> List[Dict[str, Any]]:
             center_x = pt[0] + w//2
             center_y = pt[1] + h//2
             
-            slot = 1 if pt[0] < 750 else 2
+            slot = 1 if pt[0] < split_x else 2
             
             logging.info(f"Found {img_ref} | Slot {slot} | Conf: {confidence:.2f}")
             found_objects.append({'pos': (center_x, center_y), 'conf': float(confidence), 'slot': slot})
@@ -117,29 +148,57 @@ def buy_the_soul() -> None:
         pydirectinput.click()
         time.sleep(1.5)
 
+        # Click "Use" button (assumed +100 px down). 
+        # Ideally this should be calibrated too, or we search for "Use" button image.
+        # For now, literal +100.
         pydirectinput.moveTo(centre[0], centre[1] + 100)
         pydirectinput.click()
         time.sleep(0.5)
 
 
+# --- Atomic UI Actions ---
+def click_skip_slot_1_button():
+    """Clicks the button to skip the first slot (Small Blind)."""
+    pydirectinput.moveTo(*get_action_pos("skip_slot_1"))
+    pydirectinput.click()
+
+def click_skip_slot_2_button():
+    """Clicks the button to skip the second slot (Big Blind)."""
+    pydirectinput.moveTo(*get_action_pos("skip_slot_2"))
+    pydirectinput.click()
+
+def click_buy_specialized_skip_button():
+    """Clicks the specialized skip/next button."""
+    pydirectinput.moveTo(*get_action_pos("buy_specialized_skip"))
+    pydirectinput.click()
+
+def click_new_game_top():
+    """Clicks the top New Game button in menu."""
+    pydirectinput.moveTo(*get_action_pos("new_game_top"))
+    pydirectinput.click()
+
+def click_new_game_confirm():
+    """Clicks the confirm New Game button."""
+    pydirectinput.moveTo(*get_action_pos("new_game_confirm"))
+    pydirectinput.click()
+# -------------------------
+
 def skip_slot_1() -> None:
     """
     Skips the first tag slot and then checks for the soul card.
     """
-    pydirectinput.moveTo(715, 850)
-    pydirectinput.click()
+    click_skip_slot_1_button()
     buy_the_soul()
 
 
 def skip_slot_2() -> None:
     """
     Skips the second tag slot and then checks for the soul card.
+    Note: Current logic implies clicking slot 1 skip button is required/part of flow.
     """
-    pydirectinput.moveTo(715, 850)
-    pydirectinput.click()
+    click_skip_slot_1_button() # "same as skip_slot_1..."
     time.sleep(0.5)
-    pydirectinput.moveTo(1070, 850)
-    pydirectinput.click()
+    click_skip_slot_2_button() # "really second skip slot"
     buy_the_soul()
 
 
@@ -147,12 +206,13 @@ def skip_slot_1_buy_skip_slot_2() -> None:
     """
     Skips the first tag slot, buys a specialized pack/skip, skips the second slot, and checks for the soul card.
     """
-    skip_slot_1()
-    pydirectinput.moveTo(1335, 975)
-    pydirectinput.click()
+    click_skip_slot_1_button()
+    buy_the_soul() # "coupled pick card handler" checks for soul after first skip
+    
+    click_buy_specialized_skip_button()
     time.sleep(0.5)
-    pydirectinput.moveTo(1070, 850)
-    pydirectinput.click()
+    
+    click_skip_slot_2_button()
     buy_the_soul()
 
 
@@ -162,12 +222,13 @@ def new_game() -> None:
     """
     pydirectinput.press("esc")
     time.sleep(0.5)
-    pydirectinput.moveTo(955, 355)
-    pydirectinput.click()
+    click_new_game_top()
     time.sleep(0.5)
-    pydirectinput.moveTo(955, 830)
-    pydirectinput.click()
+    click_new_game_confirm()
     time.sleep(0.5)
+    pydirectinput.moveTo(5, 5)
+    time.sleep(3)
+    logging.info("New game started. Cursor reset to (5, 5).")
 
 
 def soul_farm() -> Path:
@@ -179,6 +240,7 @@ def soul_farm() -> Path:
         Path: The path to the log file generated for this session.
     """
     print("Balatro Soul Farm Automation Ready.")
+    print(f"Loaded Configuration: {CONFIG}")
     print("Press 'P' to start/resume.")
     print("Press 'M' to pause loop.")
     print("Press 'L' to exit completely.")
@@ -215,6 +277,8 @@ def soul_farm() -> Path:
         try:
             if state.farming:
                 # Scan for assets
+
+
                 double_matches = scan_for_image("double.png")
                 charm_matches = scan_for_image("charm.png")
                 
