@@ -1,8 +1,17 @@
+"""
+Module for processing Balatro automation logs.
+"""
 import re
 from datetime import datetime
 from pathlib import Path
 
-def process_balatro_logs(log_text):
+def process_balatro_logs(log_text: str) -> None:
+    """
+    Parses the Balatro log text to extract and display statistics about the automation run.
+
+    Args:
+        log_text (str): The content of the log file.
+    """
     # Data structures
     total_doubles = 0
     total_charms = 0

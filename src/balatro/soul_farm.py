@@ -1,12 +1,17 @@
+"""
+Module for the Balatro Soul Farm automation.
+"""
+import logging
+import time
+from pathlib import Path
+from typing import Dict, List, Optional, Any
+
 import cv2
+import keyboard
 import numpy as np
 import pyautogui
 import pydirectinput
-import keyboard
 from PIL import Image
-import time
-import logging
-from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ASSETS_DIR = BASE_DIR / "assets"
@@ -34,10 +39,18 @@ data = {
 }
 
 
-def scan_for_image(img_ref):
+def scan_for_image(img_ref: str) -> List[Dict[str, Any]]:
     """
     Scans the entire screen for the given image reference.
-    Returns a list of found matches: [{'pos': (x, y), 'conf': float, 'slot': 1|2}]
+
+    Args:
+        img_ref (str): The filename of the image to search for (key in the data dictionary).
+
+    Returns:
+        List[Dict[str, Any]]: A list of found matches, where each match is a dictionary containing:
+            - 'pos' (Tuple[int, int]): The (x, y) coordinates of the center of the match.
+            - 'conf' (float): The confidence score of the match.
+            - 'slot' (int): The slot number (1 or 2) based on the x-coordinate.
     """
     if (needle := data[img_ref].get("needle")) is None:
         img_path = str(ASSETS_DIR / img_ref)
@@ -88,7 +101,10 @@ def scan_for_image(img_ref):
         return []
 
 
-def buy_the_soul():
+def buy_the_soul() -> None:
+    """
+    Attempts to find and click the 'The Soul' card on the screen.
+    """
     time.sleep(5)
     soul_matches = scan_for_image("the_soul.png")
     
@@ -106,13 +122,19 @@ def buy_the_soul():
         time.sleep(0.5)
 
 
-def skip_slot_1():
+def skip_slot_1() -> None:
+    """
+    Skips the first tag slot and then checks for the soul card.
+    """
     pydirectinput.moveTo(715, 850)
     pydirectinput.click()
     buy_the_soul()
 
 
-def skip_slot_2():
+def skip_slot_2() -> None:
+    """
+    Skips the second tag slot and then checks for the soul card.
+    """
     pydirectinput.moveTo(715, 850)
     pydirectinput.click()
     time.sleep(0.5)
@@ -121,7 +143,10 @@ def skip_slot_2():
     buy_the_soul()
 
 
-def skip_slot_1_buy_skip_slot_2():
+def skip_slot_1_buy_skip_slot_2() -> None:
+    """
+    Skips the first tag slot, buys a specialized pack/skip, skips the second slot, and checks for the soul card.
+    """
     skip_slot_1()
     pydirectinput.moveTo(1335, 975)
     pydirectinput.click()
@@ -131,7 +156,10 @@ def skip_slot_1_buy_skip_slot_2():
     buy_the_soul()
 
 
-def new_game():
+def new_game() -> None:
+    """
+    Resets the game state by returning to the main menu and starting a new run.
+    """
     pydirectinput.press("esc")
     time.sleep(0.5)
     pydirectinput.moveTo(955, 355)
@@ -143,6 +171,13 @@ def new_game():
 
 
 def soul_farm() -> Path:
+    """
+    Main loop for the Soul Farm automation.
+    Waits for user input to start ('P'), pause ('M'), or exit ('L').
+
+    Returns:
+        Path: The path to the log file generated for this session.
+    """
     print("Balatro Soul Farm Automation Ready.")
     print("Press 'P' to start/resume.")
     print("Press 'M' to pause loop.")
