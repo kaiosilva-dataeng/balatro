@@ -11,3 +11,10 @@ dependencies = [
     "pyautogui>=0.9.54",
     "pydirectinput>=1.0.4",
 ]
+
+[project.scripts]
+soul_farm = "src.balatro.soul_farm:soul_farm"
+
+[build-system]
+requires = ["uv_build>=0.9.18,<0.10.0"]
+build-backend = "uv_build"
