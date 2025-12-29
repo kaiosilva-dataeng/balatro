@@ -6,6 +6,7 @@ import pyautogui
 from .soul_farm import soul_farm, LOG_FILE, CONFIG_FILE, load_config
 from .process_log import process_balatro_logs
 from .calibrate import calibrate
+import keyboard
 
 def main() -> None:
     """
@@ -40,6 +41,7 @@ def main() -> None:
         log_path = soul_farm()
     except KeyboardInterrupt:
         print("\nStopping automation...")
+        keyboard.unhook_all()
         log_path = LOG_FILE
     
     if log_path.exists():

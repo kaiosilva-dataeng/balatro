@@ -72,11 +72,11 @@ data = {
         "needle": cv2.imread(str(ASSETS_DIR / "the_soul.png"))
     },
     "double.png": {
-        "confiance": 0.85,
+        "confiance": 0.90,
         "needle": cv2.imread(str(ASSETS_DIR / "double.png"))
     },
     "charm.png": {
-        "confiance": 0.85,
+        "confiance": 0.90,
         "needle": cv2.imread(str(ASSETS_DIR / "charm.png"))
     }
 }
