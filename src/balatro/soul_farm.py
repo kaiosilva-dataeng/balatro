@@ -111,6 +111,7 @@ def scan_screen(asset_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:
             if (needle := data[img_ref].get("needle")) is None:
                 img_path = str(ASSETS_DIR / img_ref)
                 needle = cv2.imread(img_path)
+                data[img_ref]["needle"] = needle
             
             if needle is None:
                 logging.error(f"Could not load image: {img_ref}")
