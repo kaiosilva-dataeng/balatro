@@ -173,8 +173,8 @@ def new_game() -> None:
 def soul_farm() -> Path:
     """
     Main loop for the Soul Farm automation.
-    Waits for user input to start ('P'), pause ('M'), or exit ('L').
-
+    Uses keyboard hooks to toggle states asynchronously.
+    
     Returns:
         Path: The path to the log file generated for this session.
     """
@@ -182,46 +182,75 @@ def soul_farm() -> Path:
     print("Press 'P' to start/resume.")
     print("Press 'M' to pause loop.")
     print("Press 'L' to exit completely.")
-    while True:
+
+    # State container to be modified by callbacks
+    class State:
+        running: bool = True
+        farming: bool = False
+    
+    state = State()
+
+    def on_p(event):
+        if not state.farming:
+            print("\n[Resuming Automation]")
+            state.farming = True
+
+    def on_m(event):
+        if state.farming:
+            print("\n[Pausing Automation]")
+            state.farming = False
+
+    def on_l(event):
+        print("\n[Stopping Automation]")
+        state.running = False
+        state.farming = False
+
+    # Hook keys
+    keyboard.unhook_all()
+    keyboard.on_press_key("p", on_p)
+    keyboard.on_press_key("m", on_m)
+    keyboard.on_press_key("l", on_l)
+
+    while state.running:
         try:
-            if keyboard.is_pressed("p"):
-                while True:
-                    # Scan for assets
-                    double_matches = scan_for_image("double.png")
-                    charm_matches = scan_for_image("charm.png")
+            if state.farming:
+                # Scan for assets
+                double_matches = scan_for_image("double.png")
+                charm_matches = scan_for_image("charm.png")
+                
+                found_slot1 = False
+                found_slot2 = False
+                charm_found_slot1 = False
+                
+                # Check Double matches
+                for m in double_matches:
+                    if m['slot'] == 1: charm_found_slot1 = True
+
+                # Check buy_the_soul matches
+                for m in charm_matches:
+                    if m['slot'] == 1: found_slot1 = True
+                    if m['slot'] == 2: found_slot2 = True
                     
-                    found_slot1 = False
-                    found_slot2 = False
-                    charm_found_slot1 = False
-                    # Check Double matches
-                    for m in double_matches:
-                        if m['slot'] == 1: charm_found_slot1 = True
+                if (charm_found_slot1 or found_slot1) and found_slot2:
+                    logging.info("Skip tag on both slots")
+                    skip_slot_1_buy_skip_slot_2()
+                elif found_slot1:
+                    logging.info("Skip tag on slot 1")
+                    skip_slot_1()
+                elif found_slot2:
+                    logging.info("Skip tag on slot 2")
+                    skip_slot_2()
+                    
+                new_game()
+            else:
+                # Idle wait to reduce CPU usage when paused
+                time.sleep(0.1)
+                
+        except Exception as e:
+            logging.error(f"Error in main loop: {e}")
+            time.sleep(1)
 
-                    # Check buy_the_soul matches
-                    for m in charm_matches:
-                        if m['slot'] == 1: found_slot1 = True
-                        if m['slot'] == 2: found_slot2 = True
-                        
-
-                    if (charm_found_slot1 or found_slot1)  and found_slot2:
-                        logging.info("Skip tag on both slots")
-                        skip_slot_1_buy_skip_slot_2()
-                    elif found_slot1:
-                        logging.info("Skip tag on slot 1")
-                        skip_slot_1()
-                    elif found_slot2:
-                        logging.info("Skip tag on slot 2")
-                        skip_slot_2()
-                        
-                    new_game()
-                    if keyboard.is_pressed("m"):
-                        break
-            elif keyboard.is_pressed("m"):
-                pass
-            elif keyboard.is_pressed("l"):
-                break
-        except Exception:
-            pass
+    keyboard.unhook_all()
     return LOG_FILE
 
 if __name__ == "__main__":
