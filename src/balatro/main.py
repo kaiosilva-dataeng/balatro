@@ -14,7 +14,19 @@ def main() -> None:
     """
     # Auto-calibrate if not 1080p and no config exists
     width, height = pyautogui.size()
-    if (width, height) != (1920, 1080) and (not CONFIG_FILE.exists() or CONFIG_FILE["window"] != (width, height)):
+
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                saved_config = json.load(f)
+            if tuple(saved_config.get("window", [])) != (width, height):
+                print(f"Detected resolution change: {width}x{height}")
+                print("Removing old config...")
+                CONFIG_FILE.unlink()
+        except Exception:
+            pass
+
+    if (width, height) != (1920, 1080) and not CONFIG_FILE.exists():
         print(f"Detected non-standard resolution: {width}x{height}")
         print("Starting first-run calibration...")
         try:
