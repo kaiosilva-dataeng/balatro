@@ -19,28 +19,15 @@ ASSETS_DIR = BASE_DIR / "assets"
 
 data = {
     "the_soul.png": {
-        "pos": [(620, 666), (795, 666), (970, 666), (1145, 666), (1320, 666)],
-        "width": 148,
-        "height": 220,
-
-        "confiance": 0.8,
+        "confiance": 0.7,
     },
     "double.png": {
-        "pos": [(567, 810)],
-        "width": 68,
-        "height": 68,
         "confiance": 0.9,
     },
     "charm.png": {
-        "pos": [(567, 810), (919, 870)],
-        "width": 68,
-        "height": 68,
         "confiance": 0.9,
     },
     "ethereal.png": {
-        "pos": [(567, 810), (919, 870)],
-        "width": 68,
-        "height": 68,
         "confiance": 0.9,
     },
 }
@@ -60,6 +47,7 @@ def scan_for_image(img_ref):
 
     try:
         # Capture screen
+        pydirectinput.moveTo(5, 5)
         screenshot = pyautogui.screenshot()
         haystack = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
 
@@ -105,9 +93,8 @@ def scan_for_image(img_ref):
 
 def arcana():
     time.sleep(5)
-    
     # Scan specifically for soul card inside the pack
-    soul_matches = scan_for_image("soul.png")
+    soul_matches = scan_for_image("the_soul.png")
     
     if soul_matches:
         # Take the best match
@@ -137,7 +124,7 @@ def arcana1():
 def arcana2():
     pydirectinput.moveTo(715, 850)
     pydirectinput.click()
-    time.sleep(0.2)
+    time.sleep(0.5)
     pydirectinput.moveTo(1070, 850)
     pydirectinput.click()
     arcana()

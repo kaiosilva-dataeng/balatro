@@ -6,33 +6,6 @@ import keyboard
 from pathlib import Path
 from main import data, ASSETS_DIR
 
-def run_checks():
-    print(f"\n[{time.strftime('%H:%M:%S')}] Checking assets...")
-    for name, info in data.items():
-        img_path = str(ASSETS_DIR / name)
-        
-        # Check all possible positions
-        positions = info["pos"]
-        width = info["width"]
-        height = info["height"]
-        confiance = info.get("confiance", 0.8)
-
-        for i, (x, y) in enumerate(positions):
-            try:
-                location = pyautogui.locateOnScreen(
-                    img_path, 
-                    region=(x, y, width, height), 
-                    confidence=confiance
-                )
-                
-                if location:
-                    print(f"  ✅ FOUND {name} at index {i} (Region: {x},{y})")
-            except pyautogui.ImageNotFoundException:
-                 print(f"  ❌ NOT found {name} at index {i}")
-            except Exception as e:
-                print(f"  ⚠️ Error checking {name}: {repr(e)}")
-    print("------------------------------------------------")
-
 def run_full_screen_scan():
     print(f"\n[{time.strftime('%H:%M:%S')}] 🔍 SCANNING FULL SCREEN FOR ASSETS (OpenCV)...")
     print("This might take a few seconds per asset.")
@@ -52,7 +25,7 @@ def run_full_screen_scan():
         try:
             result = cv2.matchTemplate(haystack, needle, cv2.TM_CCOEFF_NORMED)
             # Find all matches above 0.6 to see potential candidates
-            threshold = 0.6
+            threshold = data[name].get("confiance", 0.6)
             loc = np.where(result >= threshold)
             
             # Zip and sort by confidence (descending)
@@ -103,15 +76,11 @@ def run_full_screen_scan():
 
 def test_assets():
     print("=== INTERACTIVE ASSET DEBUGGER ===")
-    print("Press 'D' to check configured regions.")
     print("Press 'F' to SCAN FULL SCREEN (Find correct coordinates).")
     print("Press 'Q' to quit.")
     
     while True:
-        if keyboard.is_pressed('d'):
-            run_checks()
-            time.sleep(0.5)
-        elif keyboard.is_pressed('f'):
+        if keyboard.is_pressed('f'):
             run_full_screen_scan()
             time.sleep(0.5)
         elif keyboard.is_pressed('q'):
