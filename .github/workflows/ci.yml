@@ -37,24 +37,28 @@ jobs:
         run: uv run task check
 
       - name: Run tests with coverage
+        shell: bash
         run: |
-          uv run pytest --junitxml=pytest.xml --cov-report=xml:coverage.xml --cov-report=term-missing:skip-covered --cov=src/balatro tests/ > pytest-coverage.txt
-          cat pytest-coverage.txt
-          ls -la
+          set -o pipefail
+          mkdir -p reports
+          uv run pytest --junitxml=reports/junit.xml --cov-report=xml:reports/coverage.xml --cov-report=term-missing:skip-covered --cov=src/balatro tests/ | tee reports/pytest-coverage.txt
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: ./pytest-coverage.txt
-          junitxml-path: ./pytest.xml
+          pytest-coverage-path: ./reports/pytest-coverage.txt
+          junitxml-path: ./reports/junit.xml
 
       - name: Generate Coverage Badge
+        if: success() || failure()
         run: |
           uv pip install genbadge[coverage]
-          uv run genbadge coverage -i coverage.xml -o coverage.svg
+          mkdir -p badges
+          uv run genbadge coverage -i reports/coverage.xml -o badges/coverage.svg
 
       - name: Commit Badge
+        if: success() || failure()
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: update coverage badge [skip ci]"
-          file_pattern: coverage.svg
+          file_pattern: badges/coverage.svg
