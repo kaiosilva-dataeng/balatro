@@ -30,6 +30,11 @@ class DirectInputAdapter:
 
     def __init__(self):
         """Initialize the input adapter."""
+        if pydirectinput is None:
+            raise ImportError(
+                'DirectInputAdapter requires Windows and pydirectinput.'
+            )
+
         self._hotkey_callbacks: dict[str, Callable[[], None]] = {}
 
     def click(self, coords: Coordinates) -> None:
