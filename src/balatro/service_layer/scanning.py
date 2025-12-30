@@ -7,7 +7,7 @@ Orchestrates screen capture and template matching across configured ROIs.
 import logging
 from typing import Optional
 
-from ..adapters.ports import AbstractScreenPort
+from ..adapters.ports import AbstractInputPort, AbstractScreenPort
 from ..domain.model import Coordinates, ProfileConfig, Region, ScanResult
 
 logger = logging.getLogger(__name__)
@@ -20,15 +20,22 @@ class ScanService:
     Handles the logic of scanning multiple ROIs and aggregating results.
     """
 
-    def __init__(self, screen: AbstractScreenPort, profile: ProfileConfig):
+    def __init__(
+        self,
+        screen: AbstractScreenPort,
+        input_adapter: AbstractInputPort,
+        profile: ProfileConfig,
+    ):
         """
         Initialize the scan service.
 
         Args:
             screen: Screen adapter for capture and matching.
+            input_adapter: Input adapter to move cursor out of way.
             profile: Current resolution profile configuration.
         """
         self.screen = screen
+        self.input = input_adapter
         self.profile = profile
 
     def scan_region_for_asset(
@@ -45,6 +52,9 @@ class ScanService:
         Returns:
             List of scan results.
         """
+        # Move cursor to top-left corner to avoid interference
+        self.input.move_to(Coordinates(0, 0))
+
         haystack = self.screen.capture_region(region)
         offset = None
         if region:

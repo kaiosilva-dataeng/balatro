@@ -34,10 +34,10 @@ class FarmingService:
     """
 
     # Timing constants (seconds)
-    SOUL_WAIT_TIME = 5.0
+    SOUL_WAIT_TIME = 3.5
     ACTION_DELAY = 0.5
     CLICK_DELAY = 1.5
-    RESET_DELAY = 3.0
+    RESET_DELAY = 2.0
     IDLE_SLEEP = 0.1
 
     def __init__(
@@ -66,7 +66,7 @@ class FarmingService:
         logger.info(f'Using Profile: {self.profile.name}')
 
         # Initialize services
-        self.scanner = ScanService(screen, self.profile)
+        self.scanner = ScanService(screen, self.input, self.profile)
         self.state = GameState()
 
     def _setup_hotkeys(self) -> None:
