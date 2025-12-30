@@ -21,5 +21,25 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.5.1",
     "pytest>=9.0.2",
+    "ruff>=0.14.10",
+    "taskipy>=1.14.1",
 ]
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+# (I)-> iSort, (F)->PyFlakes, (E,W)-> PyCodeStyle,(PL)->Pylint, (PT)->Pytest-style
+select = ['I', 'F', 'E', 'W', 'PL', 'PT']
+ignore = ['PLR0913', 'PLR2004']
+
+[tool.ruff.format]
+quote-style = 'single'
+
+[tool.taskipy.tasks]
+lint = 'ruff check'
+pre_format = 'ruff check --fix'
+format = 'ruff format'
+check = 'pre-commit run --all-files'
