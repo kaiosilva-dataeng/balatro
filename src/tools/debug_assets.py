@@ -99,17 +99,17 @@ def test_assets():
             run_scan(region=None, label="FULL SCREEN")
             time.sleep(0.5)
         elif keyboard.is_pressed("s"):
-            r1 = CONFIG.get("roi_skip_slots_1")
+            r1 = CONFIG.get("skip_slots_1")
             run_scan(region=r1, label="SKIP SLOT 1 ROI")
             
             time.sleep(0.5)
             
-            r2 = CONFIG.get("roi_skip_slots_2")
+            r2 = CONFIG.get("skip_slots_2")
             run_scan(region=r2, label="SKIP SLOT 2 ROI")
             
             time.sleep(0.5)
         elif keyboard.is_pressed("t"):
-            roi_config = CONFIG.get("roi_the_soul")
+            roi_config = CONFIG.get("the_soul")
             rois = roi_config if isinstance(roi_config, list) else [roi_config]
             
             for i, r in enumerate(rois):

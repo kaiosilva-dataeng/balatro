@@ -34,39 +34,84 @@ import json
 
 CONFIG_FILE = BASE_DIR / "config.json"
 
-CONFIG = {
-    "window": (1920, 1080),
-    "skip_slot_1": (715, 850),
-    "skip_slot_2": (1070, 850),
-    "package_specialized_skip": (1335, 975),
-    "new_game_top": (955, 355),
-    "new_game_confirm": (955, 830),
-    "roi_skip_slots_1": (543, 784, 296, 153),
-    "roi_skip_slots_2": (910, 852, 266, 108),
-    "roi_the_soul": [
-        (613, 651, 174, 241),
-        (786, 657, 173, 236),
-        (958, 652, 171, 247),
-        (1130, 655, 168, 236),
-        (1303, 654, 167, 236),
-    ],
-}
+CONFIG = {}
+
+def _create_default_config() -> dict:
+    """Creates the default configuration with the standard 1080p profile."""
+    return {
+        "current_profile": "1080p",
+        "profiles": {
+            "1080p": {
+                "desc": "Standard Full HD (1920x1080)",
+                "actions": {
+                    "skip_slot_1": [715, 850],
+                    "skip_slot_2": [1070, 850],
+                    "package_specialized_skip": [1335, 975],
+                    "new_game_top": [955, 355],
+                    "new_game_confirm": [955, 830]
+                },
+                "rois": {
+                    "skip_slots_1": [543, 784, 296, 153],
+                    "skip_slots_2": [910, 852, 266, 108],
+                    "the_soul": [
+                        [613, 651, 174, 241],
+                        [786, 657, 173, 236],
+                        [958, 652, 171, 247],
+                        [1130, 655, 168, 236],
+                        [1303, 654, 167, 236]
+                    ]
+                }
+            }
+        }
+    }
 
 
 def load_config():
-    """Loads configuration from file if it exists."""
-    if CONFIG_FILE.exists():
+    """
+    Loads configuration from file.
+    Creates default config if missing.
+    Sets the global CONFIG to the active profile's settings.
+    """
+    global CONFIG
+    
+    if not CONFIG_FILE.exists():
+        logging.info(f"Config file not found. Creating default at {CONFIG_FILE}")
+        default_config = _create_default_config()
+        try:
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(default_config, f, indent=4)
+            full_config = default_config
+        except Exception as e:
+            logging.error(f"Failed to create default config: {e}")
+            return
+    else:
         try:
             with open(CONFIG_FILE, "r") as f:
-                user_config = json.load(f)
-                CONFIG.update(user_config)
+                full_config = json.load(f)
                 logging.info(f"Loaded configuration from {CONFIG_FILE}")
         except Exception as e:
             logging.error(f"Failed to load config.json: {e}")
-    else:
-        logging.warning(
-            f"Config file not found at {CONFIG_FILE}. Using default 1080p coordinates."
-        )
+            return
+
+    # Activate Profile
+    profile_name = full_config.get("current_profile", "1080p")
+    profiles = full_config.get("profiles", {})
+    
+    if profile_name not in profiles:
+        logging.error(f"Profile '{profile_name}' not found. Falling back to default.")
+        # If fallback needed, re-create default
+        full_config = _create_default_config()
+        profile_name = "1080p"
+        profiles = full_config["profiles"]
+
+    logging.info(f"Using Profile: {profile_name}")
+    active_profile = profiles[profile_name]
+    
+    # Flatten structure for easy access throughout the app
+    # We merge actions and rois into the top level of the runtime CONFIG
+    CONFIG.clear()
+    CONFIG.update(active_profile.get("actions", {}))
+    CONFIG.update(active_profile.get("rois", {}))
 
 
 load_config()
@@ -74,7 +119,11 @@ load_config()
 
 def get_action_pos(action_name: str) -> tuple[int, int]:
     """Retrieves the (x, y) coordinates for a named action from the config."""
-    return tuple(CONFIG.get(action_name, (0, 0)))
+    coords = CONFIG.get(action_name)
+    if coords:
+        return tuple(coords)
+    logging.warning(f"Action '{action_name}' not found in current profile.")
+    return (0, 0)
 
 
 # -------------------------
@@ -167,7 +216,7 @@ def buy_the_soul() -> None:
     """
     time.sleep(5)
     # Uses ROI for The Soul (Supports single tuple or list of tuples)
-    roi_config = CONFIG.get("roi_the_soul")
+    roi_config = CONFIG.get("the_soul")
     
     # Normalize to list
     rois = roi_config if isinstance(roi_config, list) else [roi_config]
@@ -329,12 +378,12 @@ def soul_farm() -> Path:
             if state.farming:
                 # Optimized Single-Pass Scan with ROI
                 # Scan Slot 1
-                roi_slot1 = CONFIG.get("roi_skip_slots_1")
+                roi_slot1 = CONFIG.get("skip_slots_1")
                 double_matches_1 = scan_screen("double.png", region=roi_slot1, slot=1)
                 charm_matches_1 = scan_screen("charm.png", region=roi_slot1, slot=1)
                 
                 # Scan Slot 2
-                roi_slot2 = CONFIG.get("roi_skip_slots_2")
+                roi_slot2 = CONFIG.get("skip_slots_2")
                 double_matches_2 = scan_screen("double.png", region=roi_slot2, slot=2)
                 charm_matches_2 = scan_screen("charm.png", region=roi_slot2, slot=2)
 
