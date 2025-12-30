@@ -21,16 +21,13 @@ from .domain.model import (
     Region,
     ScanResult,
 )
-from .entrypoints.cli import main
-from .service_layer.analytics import AnalyticsService
 
 # Re-export main services for programmatic use
+from .service_layer.analytics import AnalyticsService
 from .service_layer.farming import FarmingService
 from .service_layer.scanning import ScanService
 
 __all__ = [
-    # Entry point
-    'main',
     # Services
     'FarmingService',
     'ScanService',
