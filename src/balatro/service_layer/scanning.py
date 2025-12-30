@@ -5,6 +5,7 @@ Orchestrates screen capture and template matching across configured ROIs.
 """
 
 import logging
+import time
 from typing import Optional
 
 from ..adapters.ports import AbstractInputPort, AbstractScreenPort
@@ -53,7 +54,8 @@ class ScanService:
             List of scan results.
         """
         # Move cursor to top-left corner to avoid interference
-        self.input.move_to(Coordinates(0, 0))
+        self.input.move_to(Coordinates(10, 10))
+        time.sleep(0.1)  # Allow time for cursor to move and UI to update
 
         haystack = self.screen.capture_region(region)
         offset = None
