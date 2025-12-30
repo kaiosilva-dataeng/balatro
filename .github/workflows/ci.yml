@@ -7,6 +7,11 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+  checks: write
+  pull-requests: write
+
 jobs:
   check:
     name: Check and Test
@@ -33,10 +38,21 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          uv run pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=src/balatro tests/ | tee pytest-coverage.txt
+          uv run pytest --junitxml=pytest.xml --cov-report=xml:coverage.xml --cov-report=term-missing:skip-covered --cov=src/balatro tests/ | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
+
+      - name: Generate Coverage Badge
+        run: |
+          uv pip install genbadge[coverage]
+          uv run genbadge coverage -i coverage.xml -o coverage.svg
+
+      - name: Commit Badge
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update coverage badge [skip ci]"
+          file_pattern: coverage.svg

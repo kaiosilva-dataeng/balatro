@@ -1,4 +1,7 @@
-# Balatro Soul Farm Automation
+# 🃏 Balatro Soul Farm Automation
+
+![CI](https://github.com/kaiosilva-dataeng/balatro/actions/workflows/ci.yml/badge.svg)
+![Coverage](./coverage.svg)
 
 Automated farming tool for "The Soul" card in Balatro. Uses image recognition to scan the screen for game elements and interacts with them to maximize soul card farming efficiency.
 
