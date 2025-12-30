@@ -31,5 +31,12 @@ jobs:
       - name: Run lint and format checks
         run: uv run task check
 
-      - name: Run tests
-        run: uv run pytest tests/ -v
+      - name: Run tests with coverage
+        run: |
+          uv run pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=src/balatro tests/ | tee pytest-coverage.txt
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml
