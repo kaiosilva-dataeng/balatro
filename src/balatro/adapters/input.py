@@ -5,10 +5,15 @@ Handles mouse movement, clicks, and keyboard input including hotkeys.
 """
 
 import logging
+import sys
 from typing import Callable
 
 import keyboard
-import pydirectinput
+
+if sys.platform == 'win32':
+    import pydirectinput
+else:
+    pydirectinput = None
 
 from ..domain.model import Coordinates
 
