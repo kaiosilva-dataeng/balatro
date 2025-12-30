@@ -34,7 +34,7 @@ class FarmingService:
     """
 
     # Timing constants (seconds)
-    SOUL_WAIT_TIME = 3.5
+    SOUL_WAIT_TIME = 5.0
     ACTION_DELAY = 0.5
     CLICK_DELAY = 1.5
     RESET_DELAY = 2.0
