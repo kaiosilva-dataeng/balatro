@@ -23,6 +23,7 @@ build-backend = "uv_build"
 dev = [
     "pre-commit>=4.5.1",
     "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
     "ruff>=0.14.10",
     "taskipy>=1.14.1",
 ]
@@ -43,3 +44,5 @@ lint = 'ruff check'
 pre_format = 'ruff check --fix'
 format = 'ruff format'
 check = 'pre-commit run --all-files'
+test = 'pytest -s -x --cov=src/balatro -vv'
+post_test = 'coverage html'
