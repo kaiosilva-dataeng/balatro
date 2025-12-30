@@ -25,10 +25,18 @@ def process_balatro_logs(log_text: str) -> None:
 
     # Regex patterns
     time_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})"
-    double_pattern = r"Found double.png"
-    charm_pattern = r"Found charm.png"
-    soul_pattern = r"Found the_soul.png"
-    new_game_pattern = r"New game started. Cursor reset to (5, 5)."
+    
+    # Decision Patterns (Actions taken)
+    decision_double_charm = r"DECISION: Skip for double and charm"
+    decision_charm_charm = r"DECISION: Skip for charm and charm"
+    decision_charm_slot1 = r"DECISION: Skip for charm \(slot 1\)"
+    decision_charm_slot2 = r"DECISION: Skip for charm \(slot 2\)"
+    
+    # Soul Action (Actually clicking it)
+    soul_action_pattern = r"Selecting SOUL card"
+    
+    # New Game Action
+    new_game_pattern = r"ACTION: New Game Started"
 
     lines = log_text.strip().split("\n")
 
@@ -36,17 +44,31 @@ def process_balatro_logs(log_text: str) -> None:
         # Extract time for running time calculation
         time_match = re.search(time_pattern, line)
         if time_match:
-            timestamps.append(
-                datetime.strptime(time_match.group(1), "%Y-%m-%d %H:%M:%S,%f")
-            )
+            try:
+                timestamps.append(
+                    datetime.strptime(time_match.group(1), "%Y-%m-%d %H:%M:%S,%f")
+                )
+            except ValueError:
+                pass
 
-        # Count occurrences (handles multiple finds in one line)
-        total_doubles += len(re.findall(double_pattern, line))
-        total_charms += len(re.findall(charm_pattern, line))
-        total_souls += len(re.findall(soul_pattern, line))
+        # Count Actions based on Decisions
+        if re.search(decision_double_charm, line):
+            total_doubles += 1
+            total_charms += 1
+        elif re.search(decision_charm_charm, line):
+            total_charms += 2
+        elif re.search(decision_charm_slot1, line):
+            total_charms += 1
+        elif re.search(decision_charm_slot2, line):
+            total_charms += 1
+            
+        # Count Souls (Actions)
+        total_souls += len(re.findall(soul_action_pattern, line))
+        
+        # Count New Games
         new_game_count += len(re.findall(new_game_pattern, line))
 
-    # Calculate Running Time (Total span across all sessions in log)
+    # Calculate Running Time
     duration_seconds = 0
     if timestamps:
         duration = max(timestamps) - min(timestamps)
@@ -57,32 +79,32 @@ def process_balatro_logs(log_text: str) -> None:
     else:
         run_time_str = "0h 0m 0s"
 
-    # Display Results
+    # Derived Metrics
+    resets_per_hour = 0.0
+    if duration_seconds > 0:
+        resets_per_hour = new_game_count / (duration_seconds / 3600)
+
+    avg_reset_time = 0.0
+    if new_game_count > 0 and duration_seconds > 0:
+         avg_reset_time = duration_seconds / new_game_count
+
+    souls_per_hour = 0.0
+    if duration_seconds > 0:
+        souls_per_hour = total_souls / (duration_seconds / 3600)
+
+    # Simplified Display
     print("### Balatro Automation Statistics ###")
     print(f"Total Running Time:    {run_time_str}")
     print("-" * 35)
-    print(f"Total Double Tags:     {total_doubles}")
-    print(f"Total Charm Tags:      {total_charms}")
+    print(f"Resets (New Games):    {new_game_count}")
+    print(f"Resets per Hour:       {resets_per_hour:.2f}")
+    print(f"Avg Time per Reset:    {avg_reset_time:.2f}s")
     print("-" * 35)
-
-    # Summary of tags found
-    print("Detailed Quantitatives:")
-    print(f"* New Game Count: {new_game_count}")
-    print(f"* Charms: {total_charms + total_doubles}")
-    print(f"Total Souls Opened:    {total_souls}")
-
-    if total_souls > 0:
-        charms_per_soul = (total_charms + total_doubles) / total_souls
-        print(f"* Charms per Soul: {charms_per_soul:.2f}")
-    else:
-        print("* Charms per Soul: 0")
-
-    if duration_seconds > 0:
-        souls_per_hour = total_souls / (duration_seconds / 3600)
-        print(f"Souls per hour: {souls_per_hour:.2f}")
-    else:
-        print("Souls per hour: 0")
-
+    print(f"Decisions Executed:")
+    print(f"  Doubles Taken:       {total_doubles}")
+    print(f"  Charms Taken:        {total_charms}")
+    print(f"  Souls Clicked:       {total_souls}")
+    print(f"Souls per Hour:        {souls_per_hour:.2f}")
     print("-" * 35)
 
 
@@ -98,6 +120,10 @@ if __name__ == "__main__":
     if files:
         latest_log_file = max(files, key=lambda p: p.stat().st_mtime)
         print(f"Processing latest log: {latest_log_file.name}")
-        process_balatro_logs(latest_log_file.read_text(encoding="utf-8"))
+        content = latest_log_file.read_text(encoding="utf-8")
+        if not content.strip():
+            print("Log file is empty.")
+        else:
+            process_balatro_logs(content)
     else:
         print("No log files found.")
