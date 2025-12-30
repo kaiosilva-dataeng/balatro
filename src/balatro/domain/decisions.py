@@ -33,7 +33,7 @@ class DecisionContext:
     @classmethod
     def from_scan_results(
         cls, double_matches: list[ScanResult], charm_matches: list[ScanResult]
-    ) -> "DecisionContext":
+    ) -> 'DecisionContext':
         """
         Factory method to create context from scan results.
         """
@@ -83,9 +83,9 @@ def decide_farming_action(context: DecisionContext) -> FarmingDecision:
 def get_decision_description(decision: FarmingDecision) -> str:
     """Get a human-readable description of the decision."""
     descriptions = {
-        FarmingDecision.NONE: "No matching tags found",
-        FarmingDecision.SKIP_SLOT_1: "Skip for charm (slot 1)",
-        FarmingDecision.SKIP_SLOT_2: "Skip for charm (slot 2)",
-        FarmingDecision.SKIP_BOTH_SLOTS: "Skip for double/charm and charm",
+        FarmingDecision.NONE: 'No matching tags found',
+        FarmingDecision.SKIP_SLOT_1: 'Skip for charm (slot 1)',
+        FarmingDecision.SKIP_SLOT_2: 'Skip for charm (slot 2)',
+        FarmingDecision.SKIP_BOTH_SLOTS: 'Skip for double/charm and charm',
     }
-    return descriptions.get(decision, "Unknown decision")
+    return descriptions.get(decision, 'Unknown decision')

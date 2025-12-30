@@ -11,14 +11,14 @@ from .model import (
 )
 
 __all__ = [
-    "Coordinates",
-    "Region",
-    "ScanResult",
-    "GameState",
-    "ProfileConfig",
-    "AssetConfig",
-    "FarmingDecision",
-    "decide_farming_action",
-    "ConfigurationError",
-    "AssetNotFoundError",
+    'Coordinates',
+    'Region',
+    'ScanResult',
+    'GameState',
+    'ProfileConfig',
+    'AssetConfig',
+    'FarmingDecision',
+    'decide_farming_action',
+    'ConfigurationError',
+    'AssetNotFoundError',
 ]
