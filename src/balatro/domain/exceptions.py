@@ -18,12 +18,12 @@ class ConfigurationError(BalatroError):
 class AssetNotFoundError(BalatroError):
     """Raised when a required image asset cannot be loaded."""
 
-    def __init__(self, asset_name: str, path: str = ""):
+    def __init__(self, asset_name: str, path: str = ''):
         self.asset_name = asset_name
         self.path = path
         message = f"Asset '{asset_name}' not found"
         if path:
-            message += f" at path: {path}"
+            message += f' at path: {path}'
         super().__init__(message)
 
 
@@ -32,7 +32,9 @@ class ProfileNotFoundError(ConfigurationError):
 
     def __init__(self, profile_name: str):
         self.profile_name = profile_name
-        super().__init__(f"Profile '{profile_name}' not found in configuration")
+        super().__init__(
+            f"Profile '{profile_name}' not found in configuration"
+        )
 
 
 class ActionNotFoundError(ConfigurationError):

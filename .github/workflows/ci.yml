@@ -30,6 +30,6 @@ jobs:
 
       - name: Run lint and format checks
         run: uv run task check
-        
+
       - name: Run tests
         run: uv run pytest tests/ -v

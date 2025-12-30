@@ -11,26 +11,26 @@ graph TB
     subgraph "Entrypoints Layer"
         CLI["cli.py<br/>Entry point, dependency wiring"]
     end
-    
+
     subgraph "Service Layer"
         FS["FarmingService<br/>Orchestrates farming loop"]
         SS["ScanService<br/>Screen scanning logic"]
         AS["AnalyticsService<br/>Log parsing & stats"]
     end
-    
+
     subgraph "Domain Layer"
         Models["model.py<br/>Coordinates, Region, GameState, ScanResult"]
         Decisions["decisions.py<br/>FarmingDecision logic"]
         Exceptions["exceptions.py<br/>Custom exceptions"]
     end
-    
+
     subgraph "Adapters Layer"
         Ports["ports.py<br/>Abstract interfaces"]
         Screen["screen.py<br/>PyAutoGUI + OpenCV"]
         Input["input.py<br/>PyDirectInput + keyboard"]
         Config["config.py<br/>JSON file storage"]
     end
-    
+
     CLI --> FS
     CLI --> AS
     FS --> SS
@@ -40,7 +40,7 @@ graph TB
     SS --> Models
     FS --> Input
     FS --> Config
-    
+
     Screen -.->|implements| Ports
     Input -.->|implements| Ports
     Config -.->|implements| Ports
@@ -84,18 +84,18 @@ classDiagram
         +capture_region(region) ndarray
         +match_template(haystack, asset) list
     }
-    
+
     class PyAutoGuiScreenAdapter {
         +capture_region(region) ndarray
         +match_template(haystack, asset) list
     }
-    
+
     class FakeScreenAdapter {
         +scan_results: list
         +capture_region(region) ndarray
         +match_template(haystack, asset) list
     }
-    
+
     AbstractScreenPort <|.. PyAutoGuiScreenAdapter : implements
     AbstractScreenPort <|.. FakeScreenAdapter : implements
 ```
@@ -137,7 +137,7 @@ flowchart LR
         S --> D[Domain]
         A[Adapters] --> D
     end
-    
+
     style D fill:#90EE90
     style S fill:#87CEEB
     style A fill:#FFB6C1
@@ -173,12 +173,12 @@ def test_farming_decision():
     ])
     fake_input = FakeInputAdapter()
     fake_config = FakeConfigRepository()
-    
+
     service = FarmingService(fake_screen, fake_input, fake_config)
-    
+
     # Act
     decision = service.scan_and_decide()
-    
+
     # Assert
     assert decision == FarmingDecision.SKIP_SLOT_1
 ```

@@ -21,7 +21,7 @@ class Coordinates:
     x: int
     y: int
 
-    def offset(self, dx: int, dy: int) -> "Coordinates":
+    def offset(self, dx: int, dy: int) -> 'Coordinates':
         """Return new coordinates offset by dx, dy."""
         return Coordinates(self.x + dx, self.y + dy)
 
@@ -56,7 +56,9 @@ class Region:
 
     def local_to_global(self, local_coords: Coordinates) -> Coordinates:
         """Convert region-local coordinates to global screen coordinates."""
-        return Coordinates(x=local_coords.x + self.left, y=local_coords.y + self.top)
+        return Coordinates(
+            x=local_coords.x + self.left, y=local_coords.y + self.top
+        )
 
 
 @dataclass(frozen=True)
@@ -84,9 +86,9 @@ class ScanResult:
 
     def __repr__(self) -> str:
         return (
-            f"ScanResult({self.asset_name!r}, "
-            f"pos={self.position.to_tuple()}, "
-            f"conf={self.confidence:.2f}, slot={self.slot})"
+            f'ScanResult({self.asset_name!r}, '
+            f'pos={self.position.to_tuple()}, '
+            f'conf={self.confidence:.2f}, slot={self.slot})'
         )
 
 
