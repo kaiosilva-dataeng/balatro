@@ -1,25 +1,23 @@
 # Balatro Soul Farm Automation
 
-This tool automates the process of farming "The Soul" card in the game Balatro. It scans the screen for specific game elements (tags, cards) and interacts with them to maximize the chances of finding the soul card.
+Automated farming tool for "The Soul" card in Balatro. Uses image recognition to scan the screen for game elements and interacts with them to maximize soul card farming efficiency.
 
 ## Features
 
 - **Automated Farming**: Automatically starts new games, skips tags, and buys cards.
 - **Log Processing**: Tracks statistics like running time, found tags, and souls found.
 - **Interruptible**: Can be paused or stopped with keyboard shortcuts.
+- **Modular Architecture**: Clean separation of concerns for easy testing and maintenance.
 
 ## Installation
 
-This project is managed with [`uv`](https://github.com/astral-sh/uv). Ensure you have it installed.
+Requires [`uv`](https://github.com/astral-sh/uv):
 
 ```bash
-# Clone the repository (if applicable) or navigate to the project directory
 uv tool install https://github.com/kaiosilva-dataeng/balatro.git
 ```
 
 ## Usage
-
-To start the automation, use `uvx`:
 
 ```bash
 uvx soul_farm
@@ -27,35 +25,68 @@ uvx soul_farm
 
 ## Controls
 
-Once the script is running, the following keyboard shortcuts are available:
+- `P`: **Start/Resume** the automation loop
+- `M`: **Pause** the loop
+- `L`: **Exit** the application
 
-- `P`: **Start/Resume** the automation loop.
-- `M`: **Pause** the loop (finishes the current cycle first).
-- `L`: **Exit** the application completely.
+## Configuration
 
-## Calibration & Configuration
-
-The tool runs out-of-the-box for **1920x1080** resolution.
-
-If your screen resolution is different, the tool will automatically trigger a **calibration mode** on first run. Follow the on-screen instructions to capture the coordinates for skip buttons and menu interactions.
-
-This configuration is saved to `src/balatro/config.json`.
+Runs out-of-the-box for **1920x1080** resolution. Configuration saved to `src/balatro/config.json`.
 
 ## Logs & Statistics
 
-Logs are saved to your home directory:
-`~/.balatro/logs/` (e.g., `C:\Users\Username\.balatro\logs\`)
-
-When you exit the application (using `L` or by letting it finish), it will parse the current session's log and display statistics such as:
-
+Logs saved to `~/.balatro/logs/`. On exit, displays:
 - Total Running Time
-- Total Double Tags Found
-- Total Charm Tags Found
-- Total Souls Opened
-- Efficiency metrics (Charms per Soul, Souls per Hour)
+- Double/Charm Tags Found
+- Souls Opened
+- Efficiency metrics (Souls per Hour)
 
-## Structure
+## Architecture
 
-- `src/balatro/soul_farm.py`: Core automation logic (screen scanning, mouse interaction).
-- `src/balatro/process_log.py`: Log analysis and reporting.
-- `src/balatro/main.py`: Entry point ensuring proper execution flow.
+Built following [Cosmic Python](https://www.cosmicpython.com/) patterns:
+
+```
+src/balatro/
+├── domain/           # Pure business logic (models, decisions, exceptions)
+│   ├── model.py      # Coordinates, Region, ScanResult, GameState, ProfileConfig
+│   ├── decisions.py  # FarmingDecision logic
+│   └── exceptions.py # Custom exceptions
+│
+├── service_layer/    # Use cases and orchestration
+│   ├── farming.py    # FarmingService - main automation loop
+│   ├── scanning.py   # ScanService - screen scanning
+│   └── analytics.py  # AnalyticsService - log parsing
+│
+├── adapters/         # External I/O abstractions
+│   ├── ports.py      # Abstract interfaces (Protocols)
+│   ├── screen.py     # PyAutoGUI/OpenCV screen adapter
+│   ├── input.py      # DirectInput keyboard/mouse adapter
+│   └── config.py     # JSON config repository
+│
+├── entrypoints/      # Application entry points
+│   └── cli.py        # CLI entry point
+│
+└── assets/           # Image assets for detection
+```
+
+### Key Benefits
+
+| Benefit | How |
+|---------|-----|
+| **Testability** | Fake adapters allow unit testing without screen/keyboard |
+| **Maintainability** | Each layer has single responsibility |
+| **Debuggability** | Clear boundaries isolate issues |
+| **Evolvability** | Add new adapters without changing domain |
+
+## Development
+
+```bash
+# Install dev dependencies
+uv sync --dev
+
+# Run tests
+uv run pytest tests/ -v
+
+# Run the automation
+uv run soul_farm
+```
