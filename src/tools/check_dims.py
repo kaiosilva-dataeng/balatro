@@ -1,8 +1,9 @@
-from PIL import Image
 from pathlib import Path
 
+from PIL import Image
+
 ASSETS_DIR = Path("assets")
-files = ['arcana1.png', 'arcana2.png', 'soul.png', 'spectral.png']
+files = ["arcana1.png", "arcana2.png", "soul.png", "spectral.png"]
 
 print("Checking dimensions...")
 for f in files:

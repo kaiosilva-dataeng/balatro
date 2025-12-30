@@ -25,7 +25,7 @@ To start the automation, use `uvx`:
 uvx soul_farm
 ```
 
-### Controls
+## Controls
 
 Once the script is running, the following keyboard shortcuts are available:
 
@@ -33,9 +33,20 @@ Once the script is running, the following keyboard shortcuts are available:
 - `M`: **Pause** the loop (finishes the current cycle first).
 - `L`: **Exit** the application completely.
 
-## Statistics
+## Calibration & Configuration
 
-When you exit the application (using `L` or by letting it finish), it will parse the logs generated during the session and display statistics such as:
+The tool runs out-of-the-box for **1920x1080** resolution.
+
+If your screen resolution is different, the tool will automatically trigger a **calibration mode** on first run. Follow the on-screen instructions to capture the coordinates for skip buttons and menu interactions.
+
+This configuration is saved to `src/balatro/config.json`.
+
+## Logs & Statistics
+
+Logs are saved to your home directory:
+`~/.balatro/logs/` (e.g., `C:\Users\Username\.balatro\logs\`)
+
+When you exit the application (using `L` or by letting it finish), it will parse the current session's log and display statistics such as:
 
 - Total Running Time
 - Total Double Tags Found

@@ -1,12 +1,17 @@
 """
 Entry point for the Balatro automation application.
 """
+
+import json
 import sys
-import pyautogui
-from .soul_farm import soul_farm, LOG_FILE, CONFIG_FILE, load_config
-from .process_log import process_balatro_logs
-from .calibrate import calibrate
+
 import keyboard
+import pyautogui
+
+from .calibrate import calibrate
+from .process_log import process_balatro_logs
+from .soul_farm import CONFIG_FILE, LOG_FILE, load_config, soul_farm
+
 
 def main() -> None:
     """
@@ -32,7 +37,7 @@ def main() -> None:
         print("Starting first-run calibration...")
         try:
             calibrate()
-            load_config() # Reload config after calibration
+            load_config()  # Reload config after calibration
         except KeyboardInterrupt:
             print("\nCalibration cancelled.")
             sys.exit(0)
@@ -43,14 +48,14 @@ def main() -> None:
         print("\nStopping automation...")
         keyboard.unhook_all()
         log_path = LOG_FILE
-    
+
     if log_path.exists():
-        content = log_path.read_text(encoding='utf-8')
+        content = log_path.read_text(encoding="utf-8")
         print("LOG FILE: ", log_path.absolute())
         process_balatro_logs(content)
     else:
         print("No log file generated.")
 
+
 if __name__ == "__main__":
     main()
-

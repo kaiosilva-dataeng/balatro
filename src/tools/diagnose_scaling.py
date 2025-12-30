@@ -1,7 +1,18 @@
-import pyautogui
 import time
+
 import keyboard
-from soul_farm import scale_pos, CURRENT_WIDTH, CURRENT_HEIGHT, GAME_WIDTH, GAME_HEIGHT, SCALE, OFFSET_X, OFFSET_Y
+import pyautogui
+from soul_farm import (
+    CURRENT_HEIGHT,
+    CURRENT_WIDTH,
+    GAME_HEIGHT,
+    GAME_WIDTH,
+    OFFSET_X,
+    OFFSET_Y,
+    SCALE,
+    scale_pos,
+)
+
 
 def diagnose():
     print("=== SCALING DIAGNOSTIC TOOL ===")
@@ -10,12 +21,12 @@ def diagnose():
     print(f"Scale:      {SCALE:.4f}")
     print(f"Offsets:    X={OFFSET_X}, Y={OFFSET_Y}")
     print("-------------------------------")
-    
+
     targets = {
         "Skip Slot 1": (715, 850),
         "Skip Slot 2": (1070, 850),
         "New Game (Top)": (955, 355),
-        "New Game (Bot)": (955, 830)
+        "New Game (Bot)": (955, 830),
     }
 
     print("Calculated Targets:")
@@ -30,25 +41,26 @@ def diagnose():
     print("3. Press 'Q' to quit.")
 
     while True:
-        if keyboard.is_pressed('c'):
+        if keyboard.is_pressed("c"):
             mx, my = pyautogui.position()
             print(f"\n[CAPTURE] Mouse at: ({mx}, {my})")
-            
+
             # Reverse engineer to find what 1080p coord this maps to
             # mx = x * SCALE + OFFSET
             # x = (mx - OFFSET) / SCALE
-            
+
             rx = (mx - OFFSET_X) / SCALE
             ry = (my - OFFSET_Y) / SCALE
-            
+
             print(f"  Maps back to 1080p: ({int(rx)}, {int(ry)})")
-            print(f"  Expected 'Skip Slot 1': (715, 850)")
-            print(f"  Diff: Delta X={int(rx-715)}, Delta Y={int(ry-850)}")
+            print("  Expected 'Skip Slot 1': (715, 850)")
+            print(f"  Diff: Delta X={int(rx - 715)}, Delta Y={int(ry - 850)}")
             time.sleep(0.5)
-            
-        if keyboard.is_pressed('q'):
+
+        if keyboard.is_pressed("q"):
             break
         time.sleep(0.1)
+
 
 if __name__ == "__main__":
     diagnose()

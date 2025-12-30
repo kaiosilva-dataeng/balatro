@@ -1,8 +1,12 @@
+"""
+Module for calibrating the screen coordinates of Balatro UI elements.
+"""
 import json
 import time
+from pathlib import Path
+
 import keyboard
 import pyautogui
-from pathlib import Path
 
 CONFIG_FILE = Path(__file__).parent / "config.json"
 
@@ -14,7 +18,8 @@ ACTIONS = {
     "new_game_confirm": "HOVER over 'New Game' (Confirm/Deck Select)",
 }
 
-def calibrate():
+
+def calibrate() -> None:
     print("=== BALATRO AUTOMATION CALIBRATION ===")
     print("We will capture the screen coordinates for each action.")
     print("For each step:")
@@ -27,32 +32,34 @@ def calibrate():
     for key, prompt in ACTIONS.items():
         print(f"\n👉 {prompt}")
         print("   [Waiting for 'C' key...]")
-        
+
         while True:
-            if keyboard.is_pressed('q'):
+            if keyboard.is_pressed("q"):
                 print("calibration aborted.")
                 return
-            
-            if keyboard.is_pressed('c'):
+
+            if keyboard.is_pressed("c"):
                 # Debounce
-                while keyboard.is_pressed('c'): time.sleep(0.1)
-                
+                while keyboard.is_pressed("c"):
+                    time.sleep(0.1)
+
                 x, y = pyautogui.position()
                 config[key] = (x, y)
                 print(f"   ✅ Captured: ({x}, {y})")
                 time.sleep(0.5)
                 break
-            
+
             time.sleep(0.01)
 
     print("\n---------------------------------")
     print("Calibration Complete!")
     print(json.dumps(config, indent=2))
-    
+
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=4)
-    
+
     print(f"\nConfiguration saved to: {CONFIG_FILE}")
+
 
 if __name__ == "__main__":
     calibrate()
