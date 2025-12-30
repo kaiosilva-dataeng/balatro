@@ -10,7 +10,13 @@ from typing import Optional
 
 import cv2
 import numpy as np
-import pyautogui
+
+# Guard pyautogui import for headless environments (CI)
+# pyautogui tries to connect to display on import, which fails in CI
+try:
+    import pyautogui
+except (ImportError, KeyError, OSError):
+    pyautogui = None
 
 from ..domain.exceptions import AssetNotFoundError
 from ..domain.model import Coordinates, Region, ScanResult
@@ -31,7 +37,17 @@ class PyAutoGuiScreenAdapter:
 
         Args:
             assets_dir: Path to directory containing image assets.
+
+        Raises:
+            ImportError: If pyautogui is not available (e.g. headless env).
         """
+        if pyautogui is None:
+            raise ImportError(
+                'PyAutoGUI is required for screen capture '
+                'but could not be imported.\n'
+                'This may happen in headless environments.'
+            )
+
         self.assets_dir = assets_dir
         self._template_cache: dict[str, np.ndarray] = {}
 
