@@ -17,7 +17,8 @@ class FarmingDecision(Enum):
     NONE = auto()
     SKIP_SLOT_1 = auto()
     SKIP_SLOT_2 = auto()
-    SKIP_BOTH_SLOTS = auto()
+    SKIP_BOTH_DOUBLE_CHARM = auto()
+    SKIP_BOTH_CHARM_CHARM = auto()
 
 
 @dataclass
@@ -66,10 +67,10 @@ def decide_farming_action(context: DecisionContext) -> FarmingDecision:
         The farming decision to execute
     """
     if context.has_double_slot1 and context.has_charm_slot2:
-        return FarmingDecision.SKIP_BOTH_SLOTS
+        return FarmingDecision.SKIP_BOTH_DOUBLE_CHARM
 
     if context.has_charm_slot1 and context.has_charm_slot2:
-        return FarmingDecision.SKIP_BOTH_SLOTS
+        return FarmingDecision.SKIP_BOTH_CHARM_CHARM
 
     if context.has_charm_slot1:
         return FarmingDecision.SKIP_SLOT_1
@@ -86,6 +87,7 @@ def get_decision_description(decision: FarmingDecision) -> str:
         FarmingDecision.NONE: 'No matching tags found',
         FarmingDecision.SKIP_SLOT_1: 'Skip for charm (slot 1)',
         FarmingDecision.SKIP_SLOT_2: 'Skip for charm (slot 2)',
-        FarmingDecision.SKIP_BOTH_SLOTS: 'Skip for double/charm and charm',
+        FarmingDecision.SKIP_BOTH_DOUBLE_CHARM: 'Skip for double and charm',
+        FarmingDecision.SKIP_BOTH_CHARM_CHARM: 'Skip for charm and charm',
     }
     return descriptions.get(decision, 'Unknown decision')

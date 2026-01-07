@@ -49,12 +49,12 @@ class TestDecideFarmingAction:
     def test_double_and_charm_returns_skip_both(self):
         context = DecisionContext(has_double_slot1=True, has_charm_slot2=True)
         decision = decide_farming_action(context)
-        assert decision == FarmingDecision.SKIP_BOTH_SLOTS
+        assert decision == FarmingDecision.SKIP_BOTH_DOUBLE_CHARM
 
     def test_charm_both_slots_returns_skip_both(self):
         context = DecisionContext(has_charm_slot1=True, has_charm_slot2=True)
         decision = decide_farming_action(context)
-        assert decision == FarmingDecision.SKIP_BOTH_SLOTS
+        assert decision == FarmingDecision.SKIP_BOTH_CHARM_CHARM
 
     def test_charm_slot1_only_returns_skip_slot1(self):
         context = DecisionContext(has_charm_slot1=True)
