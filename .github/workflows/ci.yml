@@ -55,6 +55,7 @@ jobs:
           uv pip install genbadge[coverage]
           mkdir -p badges
           uv run genbadge coverage -i reports/coverage.xml -o badges/coverage.svg
+          echo "" >> badges/coverage.svg
 
       - name: Commit Badge
         if: success() || failure()
