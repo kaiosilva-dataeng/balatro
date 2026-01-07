@@ -33,19 +33,13 @@ class FarmingService:
     Uses dependency injection for all external I/O to enable testing.
     """
 
-    # Timing constants (seconds)
-    SOUL_WAIT_TIME = 5.0
-    ACTION_DELAY = 0.5
-    CLICK_DELAY = 1.5
-    RESET_DELAY = 2.0
-    IDLE_SLEEP = 0.1
-
     def __init__(
         self,
         screen: AbstractScreenPort,
         input_adapter: AbstractInputPort,
         config: AbstractConfigPort,
         profile_name: Optional[str] = None,
+        fast_mode: bool = False,
     ):
         """
         Initialize the farming service.
@@ -55,14 +49,30 @@ class FarmingService:
             input_adapter: Input adapter for mouse/keyboard.
             config: Config repository for profile loading.
             profile_name: Name of profile to use (defaults to current).
+            fast_mode: Whether to use reduced delays for modded games.
         """
         self.screen = screen
         self.input = input_adapter
         self.config = config
 
+        # Initialize timings
+        if fast_mode:
+            logger.info('Fast Mode Enabled: Using aggressive timings')
+            self.soul_wait_time = 1.5
+            self.action_delay = 0.1
+            self.click_delay = 0.3
+            self.reset_delay = 0.2
+            self.idle_sleep = 0.05
+        else:
+            self.soul_wait_time = 5.0
+            self.action_delay = 0.5
+            self.click_delay = 1.5
+            self.reset_delay = 2.0
+            self.idle_sleep = 0.1
+
         # Load profile
         profile_name = profile_name or config.get_current_profile_name()
-        self.profile = config.load_profile(profile_name)
+        self.profile = config.load_profile(profile_name, fast_mode=fast_mode)
         logger.info(f'Using Profile: {self.profile.name}')
 
         # Initialize services
@@ -117,7 +127,9 @@ class FarmingService:
         Returns:
             True if soul was found and purchased.
         """
-        time.sleep(self.SOUL_WAIT_TIME)
+        # Move cursor specific to waiting to avoid hover interference
+        self.input.move_to(Coordinates(10, 10))
+        time.sleep(self.soul_wait_time)
 
         soul_match = self.scanner.scan_for_soul()
         if not soul_match:
@@ -128,12 +140,12 @@ class FarmingService:
 
         # Click the soul card
         self.input.click(soul_match.position)
-        time.sleep(self.CLICK_DELAY)
+        time.sleep(self.click_delay)
 
         # Click "Use" button (offset below the card)
         use_button = soul_match.position.offset(0, 100)
         self.input.click(use_button)
-        time.sleep(self.ACTION_DELAY)
+        time.sleep(self.action_delay)
 
         return True
 
@@ -145,7 +157,7 @@ class FarmingService:
     def _skip_slot_2(self) -> None:
         """Skip the second tag slot and check for soul."""
         self._click_action('skip_slot_1')
-        time.sleep(self.ACTION_DELAY)
+        time.sleep(self.action_delay)
         self._click_action('skip_slot_2')
         self._buy_the_soul()
 
@@ -155,7 +167,7 @@ class FarmingService:
         self._buy_the_soul()
 
         self._click_action('package_specialized_skip')
-        time.sleep(self.ACTION_DELAY)
+        time.sleep(self.action_delay)
 
         self._click_action('skip_slot_2')
         self._buy_the_soul()
@@ -166,24 +178,27 @@ class FarmingService:
             self._skip_slot_1()
         elif decision == FarmingDecision.SKIP_SLOT_2:
             self._skip_slot_2()
-        elif decision == FarmingDecision.SKIP_BOTH_SLOTS:
+        elif decision in (
+            FarmingDecision.SKIP_BOTH_DOUBLE_CHARM,
+            FarmingDecision.SKIP_BOTH_CHARM_CHARM,
+        ):
             self._skip_both_slots()
         # NONE decision - do nothing
 
     def _new_game(self) -> None:
         """Reset game state and start a new run."""
         self.input.press_key('esc')
-        time.sleep(self.ACTION_DELAY)
+        time.sleep(self.action_delay)
 
         self._click_action('new_game_top')
-        time.sleep(self.ACTION_DELAY)
+        time.sleep(self.action_delay)
 
         self._click_action('new_game_confirm')
-        time.sleep(self.ACTION_DELAY)
+        time.sleep(self.action_delay)
 
         # Move mouse out of the way
         self.input.move_to(Coordinates(5, 5))
-        time.sleep(self.RESET_DELAY)
+        time.sleep(self.reset_delay)
 
         self.state.increment_run()
         logger.info('ACTION: New Game Started')
@@ -231,7 +246,7 @@ class FarmingService:
                 if self.state.is_farming:
                     self.run_iteration()
                 else:
-                    time.sleep(self.IDLE_SLEEP)
+                    time.sleep(self.idle_sleep)
         except Exception as e:
             logger.error(f'Error in farming loop: {e}')
             raise

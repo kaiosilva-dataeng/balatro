@@ -25,6 +25,12 @@
                     830
                 ]
             },
+            "fast_mode_overrides": {
+                "new_game_top": [
+                    959,
+                    311
+                ]
+            },
             "rois": {
                 "skip_slots_1": [
                     543,

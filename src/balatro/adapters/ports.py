@@ -134,12 +134,15 @@ class AbstractConfigPort(Protocol):
     """
 
     @abstractmethod
-    def load_profile(self, profile_name: str) -> ProfileConfig:
+    def load_profile(
+        self, profile_name: str, fast_mode: bool = False
+    ) -> ProfileConfig:
         """
         Load a resolution profile by name.
 
         Args:
             profile_name: Name of the profile to load.
+            fast_mode: Whether to apply fast mode overrides.
 
         Returns:
             The loaded ProfileConfig.

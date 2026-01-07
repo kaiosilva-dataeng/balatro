@@ -29,6 +29,9 @@ def _create_default_config() -> dict[str, Any]:
                     'new_game_top': [955, 355],
                     'new_game_confirm': [955, 830],
                 },
+                'fast_mode_overrides': {
+                    'new_game_top': [959, 311],
+                },
                 'rois': {
                     'skip_slots_1': [543, 784, 296, 153],
                     'skip_slots_2': [910, 852, 266, 108],
@@ -117,12 +120,15 @@ class JsonConfigRepository:
         profiles = self._config.get('profiles', {})
         return list(profiles.keys())
 
-    def load_profile(self, profile_name: str) -> ProfileConfig:
+    def load_profile(
+        self, profile_name: str, fast_mode: bool = False
+    ) -> ProfileConfig:
         """
         Load a resolution profile by name.
 
         Args:
             profile_name: Name of the profile to load.
+            fast_mode: Whether to apply fast mode overrides.
 
         Returns:
             The loaded ProfileConfig.
@@ -137,8 +143,20 @@ class JsonConfigRepository:
 
         profile_data = profiles[profile_name]
 
+        # Parse actions
+        actions_data = profile_data.get('actions', {}).copy()
+
+        # Apply overrides if in fast mode
+        if fast_mode:
+            overrides = profile_data.get('fast_mode_overrides', {})
+            if overrides:
+                logger.info(
+                    f'Applying fast mode overrides: {list(overrides.keys())}'
+                )
+                actions_data.update(overrides)
+
         actions: dict[str, Coordinates] = {}
-        for name, coords in profile_data.get('actions', {}).items():
+        for name, coords in actions_data.items():
             actions[name] = _parse_coordinates(coords)
 
         # Parse ROIs
