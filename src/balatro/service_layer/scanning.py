@@ -119,21 +119,44 @@ class ScanService:
 
     def scan_for_soul(self) -> Optional[ScanResult]:
         """
-        Scan the soul card ROIs for The Soul card.
+        Scan for The Soul card.
+
+        Strategy:
+        1. Scan configured ROIs (fast).
+        2. If not found, scan full screen (resilient fallback).
 
         Returns:
             The best matching ScanResult if found, None otherwise.
         """
+        # 1. Try ROI scan first (Fast)
         soul_rois = self.profile.get_rois('the_soul')
+        best_roi_match: Optional[ScanResult] = None
 
         for i, roi in enumerate(soul_rois):
             logger.debug(f'Scanning Soul ROI {i + 1}: {roi}')
             matches = self.scan_region_for_asset(
                 'the_soul.png', roi, slot=i + 1
             )
-
             if matches:
-                # Return the best match
-                return max(matches, key=lambda m: m.confidence)
+                current_best = max(matches, key=lambda m: m.confidence)
+                if (
+                    not best_roi_match
+                    or current_best.confidence > best_roi_match.confidence
+                ):
+                    best_roi_match = current_best
+
+        if best_roi_match:
+            return best_roi_match
+
+        # 2. Fallback to Full Screen scan (Resilient)
+        logger.info('Soul not found in ROIs, attempting Full Screen scan...')
+        full_matches = self.scan_region_for_asset('the_soul.png', region=None)
+
+        if full_matches:
+            best_full = max(full_matches, key=lambda m: m.confidence)
+            logger.info(
+                f'Found Soul (Global) at {best_full.position.to_tuple()}'
+            )
+            return best_full
 
         return None

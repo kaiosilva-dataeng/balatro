@@ -33,11 +33,11 @@ def _create_default_config() -> dict[str, Any]:
                     'skip_slots_1': [543, 784, 296, 153],
                     'skip_slots_2': [910, 852, 266, 108],
                     'the_soul': [
-                        [613, 651, 174, 241],
-                        [786, 657, 173, 236],
-                        [958, 652, 171, 247],
-                        [1130, 655, 168, 236],
-                        [1303, 654, 167, 236],
+                        [563, 651, 174, 241],
+                        [736, 657, 173, 236],
+                        [908, 652, 171, 247],
+                        [1080, 655, 168, 236],
+                        [1253, 654, 167, 236],
                     ],
                 },
             }
@@ -137,7 +137,6 @@ class JsonConfigRepository:
 
         profile_data = profiles[profile_name]
 
-        # Parse actions
         actions: dict[str, Coordinates] = {}
         for name, coords in profile_data.get('actions', {}).items():
             actions[name] = _parse_coordinates(coords)
