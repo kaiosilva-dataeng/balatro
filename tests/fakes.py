@@ -108,7 +108,9 @@ class FakeConfigRepository:
         )
         self.saved_profiles: list[ProfileConfig] = []
 
-    def load_profile(self, profile_name: str) -> ProfileConfig:
+    def load_profile(
+        self, profile_name: str, fast_mode: bool = False
+    ) -> ProfileConfig:
         return self.profile
 
     def get_current_profile_name(self) -> str:
